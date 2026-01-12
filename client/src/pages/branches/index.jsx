@@ -10,6 +10,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import AddBranchModal from '../../components/modals/AddBranchModal';
+import API_URL from '../../config/api';
 
 const Branches = () => {
   const [branches, setBranches] = useState([]);
@@ -22,7 +23,7 @@ const Branches = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/branches', {
+      const response = await fetch(`${API_URL}/api/branches`, {
         method: 'GET',
         credentials: 'include',
         headers: {

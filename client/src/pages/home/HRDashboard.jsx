@@ -1,89 +1,164 @@
-import { Grid, Card, CardContent, Typography, Box } from "@mui/material";
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
 import PeopleIcon from "@mui/icons-material/People";
 import BusinessIcon from "@mui/icons-material/Business";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import useDashboardStats from "../../hooks/useDashboardStats";
 
 const HRDashboard = ({ user }) => {
+  const { staffCount, branchCount, loading, error } = useDashboardStats();
+
+  if (error) {
+    return (
+      <Box sx={{ mb: 4 }}>
+        <Alert severity="error">Failed to load dashboard data: {error}</Alert>
+      </Box>
+    );
+  }
+
   return (
-    <Box>
+    <Box sx={{ mb: 4 }}>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <PeopleIcon sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
-                <Typography variant="h6">Total Employees</Typography>
+        <Grid item xs={12} md={6}>
+          <Card
+            variant="outlined"
+            sx={{
+              height: "100%",
+              borderRadius: "16px",
+              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+              border: "1px solid",
+              borderColor: "divider",
+              transition:
+                "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: "0px 12px 30px rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          >
+            <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  mb: 2,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    Total Employees
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
+                    {loading ? <CircularProgress size={30} /> : staffCount}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "12px",
+                    backgroundColor: "primary.light",
+                    color: "primary.main",
+                    opacity: 0.9,
+                  }}
+                >
+                  <PeopleIcon sx={{ fontSize: 32, color: "#fff" }} />
+                </Box>
               </Box>
-              <Typography variant="h4">--</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Active employees
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
+              >
+                Active staff members
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <BusinessIcon sx={{ fontSize: 40, color: "success.main", mr: 2 }} />
-                <Typography variant="h6">Branches</Typography>
+        <Grid item xs={12} md={6}>
+          <Card
+            variant="outlined"
+            sx={{
+              height: "100%",
+              borderRadius: "16px",
+              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+              border: "1px solid",
+              borderColor: "divider",
+              transition:
+                "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: "0px 12px 30px rgba(0, 0, 0, 0.1)",
+              },
+            }}
+          >
+            <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  mb: 2,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    Branches
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
+                    {loading ? <CircularProgress size={30} /> : branchCount}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 56,
+                    height: 56,
+                    borderRadius: "12px",
+                    backgroundColor: "success.light",
+                    color: "success.main",
+                    opacity: 0.9,
+                  }}
+                >
+                  <BusinessIcon sx={{ fontSize: 32, color: "#fff" }} />
+                </Box>
               </Box>
-              <Typography variant="h4">--</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total branches
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
+              >
+                Operational locations
               </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <PersonAddIcon sx={{ fontSize: 40, color: "info.main", mr: 2 }} />
-                <Typography variant="h6">New Hires</Typography>
-              </Box>
-              <Typography variant="h4">--</Typography>
-              <Typography variant="body2" color="text.secondary">
-                This month
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={6} lg={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <AssignmentIcon sx={{ fontSize: 40, color: "warning.main", mr: 2 }} />
-                <Typography variant="h6">Pending Tasks</Typography>
-              </Box>
-              <Typography variant="h4">--</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Requires attention
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                HR Quick Actions
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                As an HR manager, you can:
-              </Typography>
-              <Box component="ul" sx={{ mt: 2 }}>
-                <li>Manage employee records and information</li>
-                <li>Create and manage branches</li>
-                <li>Process employee onboarding</li>
-                <li>Review and approve bonuses</li>
-                <li>Generate HR reports</li>
-              </Box>
             </CardContent>
           </Card>
         </Grid>

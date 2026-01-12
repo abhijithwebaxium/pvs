@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import MenuButton from "./MenuButton";
 import { logout } from "../store/slices/userSlice";
+import API_URL from "../config/api";
 
 const MenuItem = styled(MuiMenuItem)({
   margin: "2px 0",
@@ -34,7 +35,7 @@ export default function OptionsMenu() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:4000/api/auth/logout', {
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });

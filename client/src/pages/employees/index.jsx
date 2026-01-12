@@ -12,6 +12,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AddEmployeeModal from '../../components/modals/AddEmployeeModal';
 import UploadEmployeesModal from '../../components/modals/UploadEmployeesModal';
+import API_URL from '../../config/api';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -25,7 +26,7 @@ const Employees = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/employees', {
+      const response = await fetch(`${API_URL}/api/employees`, {
         method: 'GET',
         credentials: 'include',
         headers: {

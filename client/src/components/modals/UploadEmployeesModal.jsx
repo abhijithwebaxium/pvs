@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import * as XLSX from 'xlsx';
+import API_URL from '../../config/api';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -38,7 +39,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
   const fetchBranches = async () => {
     try {
       const response = await fetch(
-        'http://localhost:4000/api/branches?isActive=true',
+        `${API_URL}/api/branches?isActive=true`,
         {
           method: 'GET',
           credentials: 'include',
@@ -289,7 +290,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       setUploadProgress(50);
 
       // Send data to API
-      const response = await fetch('http://localhost:4000/api/employees/bulk', {
+      const response = await fetch(`${API_URL}/api/employees/bulk`, {
         method: 'POST',
         credentials: 'include',
         headers: {

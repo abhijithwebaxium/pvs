@@ -15,6 +15,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import API_URL from '../../config/api';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -51,7 +52,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
   const fetchBranches = async () => {
     try {
       const response = await fetch(
-        'http://localhost:4000/api/branches?isActive=true',
+        `${API_URL}/api/branches?isActive=true`,
         {
           method: 'GET',
           credentials: 'include',
@@ -122,7 +123,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         },
       };
 
-      const response = await fetch('http://localhost:4000/api/employees', {
+      const response = await fetch(`${API_URL}/api/employees`, {
         method: 'POST',
         credentials: 'include',
         headers: {

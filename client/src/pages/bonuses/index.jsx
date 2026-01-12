@@ -20,6 +20,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import CancelIcon from '@mui/icons-material/Cancel';
+import API_URL from '../../config/api';
 
 const Bonuses = () => {
   const [employees, setEmployees] = useState([]);
@@ -37,7 +38,7 @@ const Bonuses = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/employees/supervisor/my-team', {
+      const response = await fetch(`${API_URL}/api/employees/supervisor/my-team`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -90,7 +91,7 @@ const Bonuses = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/employees/${bonusDialog.employee._id}/bonus`,
+        `${API_URL}/api/employees/${bonusDialog.employee._id}/bonus`,
         {
           method: 'PUT',
           credentials: 'include',

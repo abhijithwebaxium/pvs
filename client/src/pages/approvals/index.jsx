@@ -21,6 +21,7 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import API_URL from '../../config/api';
 
 const Approvals = () => {
   const [approvalsData, setApprovalsData] = useState({
@@ -54,7 +55,7 @@ const Approvals = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/employees/approvals/my-approvals', {
+      const response = await fetch(`${API_URL}/api/employees/approvals/my-approvals`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -111,7 +112,7 @@ const Approvals = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/employees/approvals/${approvalDialog.employee._id}`,
+        `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}`,
         {
           method: 'POST',
           credentials: 'include',

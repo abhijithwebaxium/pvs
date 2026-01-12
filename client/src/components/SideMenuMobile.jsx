@@ -16,6 +16,7 @@ import CardAlert from "./CardAlert";
 import { selectUser } from "../store/slices/userSlice";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo_black.png";
+import API_URL from "../config/api";
 
 function SideMenuMobile({ open, toggleDrawer }) {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ function SideMenuMobile({ open, toggleDrawer }) {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:4000/api/auth/logout', {
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
