@@ -26,11 +26,13 @@ const Employees = () => {
     setError('');
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/employees`, {
         method: 'GET',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 

@@ -11,4 +11,5 @@ export const ALLOWED_ORIGINS = [
   'http://localhost:5173', // Vite default
   'http://localhost:3000', // React default
   'http://localhost:4173', // Vite preview
-];
+  process.env.CLIENT_URL, // Production frontend URL
+].filter(Boolean); // Remove undefined values

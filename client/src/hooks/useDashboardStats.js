@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../store/slices/userSlice";
+import { API_URL } from "../config/api";
 
 const useDashboardStats = () => {
   const [stats, setStats] = useState({
@@ -27,7 +28,7 @@ const useDashboardStats = () => {
         setError(null);
 
         // Fetch employees count
-        const employeesResponse = await fetch("/api/employees", {
+        const employeesResponse = await fetch(`${API_URL}/api/employees`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -35,7 +36,7 @@ const useDashboardStats = () => {
         });
 
         // Fetch branches count
-        const branchesResponse = await fetch("/api/branches", {
+        const branchesResponse = await fetch(`${API_URL}/api/branches`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
