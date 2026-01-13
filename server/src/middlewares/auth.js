@@ -47,36 +47,19 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Role-based authorization
+// Role-based authorization - REMOVED
+// All authenticated users can access all routes
 export const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Not authorized', 401));
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError(`Role ${req.user.role} is not authorized to access this route`, 403)
-      );
-    }
-
+    // No role checking - just pass through
     next();
   };
 };
 
-// Access level authorization
+// Access level authorization - REMOVED
 export const authorizeLevel = (minLevel) => {
   return (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Not authorized', 401));
-    }
-
-    if (req.user.accessLevel < minLevel) {
-      return next(
-        new AppError('Insufficient access level for this operation', 403)
-      );
-    }
-
+    // No level checking - just pass through
     next();
   };
 };

@@ -56,19 +56,9 @@ function App(props) {
               <Route element={<ProtectedRoute />}>
                 <Route element={<RootLayout />}>
                   <Route index element={<Home />} />
-
-                  {/* HR and Admin only routes */}
-                  <Route element={<ProtectedRoute requiredRoles={['hr', 'admin']} />}>
-                    <Route path="/branches" element={<Branches />} />
-                    <Route path="/employees" element={<Employees />} />
-                  </Route>
-
-                  {/* Approver, HR and Admin routes */}
-                  <Route element={<ProtectedRoute requiredRoles={['approver', 'hr', 'admin']} />}>
-                    <Route path="/approvals" element={<Approvals />} />
-                  </Route>
-
-                  {/* All authenticated users can see bonuses */}
+                  <Route path="/branches" element={<Branches />} />
+                  <Route path="/employees" element={<Employees />} />
+                  <Route path="/approvals" element={<Approvals />} />
                   <Route path="/bonuses" element={<Bonuses />} />
                 </Route>
               </Route>

@@ -1,24 +1,16 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { selectIsAuthenticated, selectUser } from "../store/slices/userSlice";
+import { selectIsAuthenticated } from "../store/slices/userSlice";
 
-const ProtectedRoute = ({ requiredRoles = [] }) => {
+const ProtectedRoute = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const user = useSelector(selectUser);
 
   // Check if user is authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Role-based access control
-  if (requiredRoles?.length && user) {
-    const hasPermission = requiredRoles.includes(user.role);
-    if (!hasPermission) {
-      return <Navigate to="/unauthorized" replace />;
-    }
-  }
-
+  // No role-based access control - all authenticated users can access all routes
   return <Outlet />;
 };
 

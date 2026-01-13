@@ -1,25 +1,15 @@
 import PropTypes from "prop-types";
-import { useRole } from "../hooks/useRole";
 
 /**
  * Component to conditionally render children based on user role
- * @param {Array} allowedRoles - Array of roles that can see the children
- * @param {ReactNode} children - Content to render if user has required role
- * @param {ReactNode} fallback - Optional content to render if user doesn't have required role
+ * NO LONGER ENFORCES ROLE RESTRICTIONS - Always shows children
+ * @param {Array} allowedRoles - DEPRECATED - No longer used
+ * @param {ReactNode} children - Content to render
+ * @param {ReactNode} fallback - DEPRECATED - No longer used
  */
 const RoleGuard = ({ allowedRoles = [], children, fallback = null }) => {
-  const { hasAnyRole } = useRole();
-
-  if (!allowedRoles.length) {
-    // If no roles specified, show to all authenticated users
-    return children;
-  }
-
-  if (hasAnyRole(allowedRoles)) {
-    return children;
-  }
-
-  return fallback;
+  // No role checking - always show children
+  return children;
 };
 
 RoleGuard.propTypes = {

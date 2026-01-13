@@ -46,9 +46,9 @@ const Home = () => {
       <Typography variant="h4" gutterBottom>
         Welcome, {user?.firstName || "User"}!
       </Typography>
-      {/* <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
         Role: {user?.role?.toUpperCase() || "N/A"}
-      </Typography> */}
+      </Typography>
       {renderDashboard()}
     </Box>
   );

@@ -17,13 +17,13 @@ import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
 import { selectUser } from "../store/slices/userSlice";
 
-// Define menu items with role-based access control
+// Define menu items - NO ROLE RESTRICTIONS
 const menuItems = [
-  { text: "Home", icon: <HomeRoundedIcon />, path: "/", roles: ["employee", "approver", "hr", "admin"] },
-  { text: "Branches", icon: <BusinessRoundedIcon />, path: "/branches", roles: ["hr", "admin"] },
-  { text: "Employees", icon: <PeopleRoundedIcon />, path: "/employees", roles: ["hr", "admin"] },
-  { text: "Approvals", icon: <CheckCircleOutlineIcon />, path: "/approvals", roles: ["approver", "hr", "admin"] },
-  { text: "Bonuses", icon: <AttachMoneyIcon />, path: "/bonuses", roles: ["employee", "approver", "hr", "admin"] },
+  { text: "Home", icon: <HomeRoundedIcon />, path: "/" },
+  { text: "Branches", icon: <BusinessRoundedIcon />, path: "/branches" },
+  { text: "Employees", icon: <PeopleRoundedIcon />, path: "/employees" },
+  { text: "Approvals", icon: <CheckCircleOutlineIcon />, path: "/approvals" },
+  { text: "Bonuses", icon: <AttachMoneyIcon />, path: "/bonuses" },
 ];
 
 const secondaryListItems = [
@@ -43,11 +43,8 @@ export default function MenuContent() {
     }
   };
 
-  // Filter menu items based on user role
-  const visibleMenuItems = menuItems.filter((item) => {
-    if (!user || !user.role) return false;
-    return item.roles.includes(user.role);
-  });
+  // No role filtering - show all menu items to all authenticated users
+  const visibleMenuItems = menuItems;
 
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>

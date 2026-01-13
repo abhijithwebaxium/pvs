@@ -1,4 +1,5 @@
 // Role-based access control utilities
+// NO LONGER ENFORCES ROLE RESTRICTIONS - All functions return true
 
 export const ROLES = {
   EMPLOYEE: "employee",
@@ -7,61 +8,59 @@ export const ROLES = {
   ADMIN: "admin",
 };
 
-// Check if user has specific role
+// Check if user has specific role - ALWAYS RETURNS TRUE
 export const hasRole = (user, role) => {
-  if (!user || !user.role) return false;
-  return user.role === role;
+  return true;
 };
 
-// Check if user has any of the specified roles
+// Check if user has any of the specified roles - ALWAYS RETURNS TRUE
 export const hasAnyRole = (user, roles) => {
-  if (!user || !user.role) return false;
-  return roles.includes(user.role);
+  return true;
 };
 
-// Check if user is admin
+// Check if user is admin - ALWAYS RETURNS TRUE
 export const isAdmin = (user) => {
-  return hasRole(user, ROLES.ADMIN);
+  return true;
 };
 
-// Check if user is HR
+// Check if user is HR - ALWAYS RETURNS TRUE
 export const isHR = (user) => {
-  return hasRole(user, ROLES.HR);
+  return true;
 };
 
-// Check if user is approver
+// Check if user is approver - ALWAYS RETURNS TRUE
 export const isApprover = (user) => {
-  return hasRole(user, ROLES.APPROVER);
+  return true;
 };
 
-// Check if user is employee
+// Check if user is employee - ALWAYS RETURNS TRUE
 export const isEmployee = (user) => {
-  return hasRole(user, ROLES.EMPLOYEE);
+  return true;
 };
 
-// Check if user can manage employees (HR or Admin)
+// Check if user can manage employees - ALWAYS RETURNS TRUE
 export const canManageEmployees = (user) => {
-  return hasAnyRole(user, [ROLES.HR, ROLES.ADMIN]);
+  return true;
 };
 
-// Check if user can manage branches (HR or Admin)
+// Check if user can manage branches - ALWAYS RETURNS TRUE
 export const canManageBranches = (user) => {
-  return hasAnyRole(user, [ROLES.HR, ROLES.ADMIN]);
+  return true;
 };
 
-// Check if user can approve (Approver, HR, or Admin)
+// Check if user can approve - ALWAYS RETURNS TRUE
 export const canApprove = (user) => {
-  return hasAnyRole(user, [ROLES.APPROVER, ROLES.HR, ROLES.ADMIN]);
+  return true;
 };
 
-// Check if user can view bonuses (all authenticated users)
+// Check if user can view bonuses - ALWAYS RETURNS TRUE
 export const canViewBonuses = (user) => {
-  return !!user && !!user.role;
+  return true;
 };
 
-// Check if user can manage bonuses (HR or Admin)
+// Check if user can manage bonuses - ALWAYS RETURNS TRUE
 export const canManageBonuses = (user) => {
-  return hasAnyRole(user, [ROLES.HR, ROLES.ADMIN]);
+  return true;
 };
 
 // Get user display name

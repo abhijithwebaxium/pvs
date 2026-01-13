@@ -1216,10 +1216,12 @@ export const processApproval = async (req, res, next) => {
       return next(new AppError('Employee not found', 404));
     }
 
-    // Check if bonus has been entered
-    if (!employee.bonus2025Status?.enteredBy) {
-      return next(new AppError('No bonus has been entered for this employee. Cannot approve.', 400));
-    }
+    // REMOVED: Regular approvals don't require bonus to be entered
+    // This check was preventing approvers from approving employees
+    // Bonus approvals are handled separately in processBonusApproval endpoint
+    // if (!employee.bonus2025Status?.enteredBy) {
+    //   return next(new AppError('No bonus has been entered for this employee. Cannot approve.', 400));
+    // }
 
     // Verify that the logged-in user is the approver for this level
     const levelKey = `level${level}`;
