@@ -12,6 +12,7 @@ import {
   getMyApprovals,
   debugApproverAssignments,
   resetAndSyncApprovers,
+  setApproverRoles,
   processApproval,
   getMySupervisedEmployees,
   updateEmployeeBonus,
@@ -30,8 +31,9 @@ router.route('/').get(authorize('hr', 'admin'), getEmployees).post(authorize('hr
 // HR and Admin can bulk create employees
 router.post('/bulk', authorize('hr', 'admin'), bulkCreateEmployees);
 
-// Admin only for syncing approvers
+// Admin only for syncing approvers and setting approver roles
 router.post('/sync-approvers', authorize('admin'), syncApproverIds);
+router.post('/set-approver-roles', authorize('admin'), setApproverRoles);
 
 // Supervisor routes - for managing bonuses of supervised employees
 router.get('/supervisor/my-team', getMySupervisedEmployees);

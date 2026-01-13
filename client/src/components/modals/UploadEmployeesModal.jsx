@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -12,22 +12,22 @@ import {
   TextField,
   Typography,
   LinearProgress,
-} from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import * as XLSX from 'xlsx';
-import API_URL from '../../config/api';
+} from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import * as XLSX from "xlsx";
+import API_URL from "../../config/api";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
 const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
-  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState("");
   const [branches, setBranches] = useState([]);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
@@ -38,16 +38,13 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
   const fetchBranches = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/branches?isActive=true`,
-        {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/api/branches?isActive=true`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = await response.json();
 
@@ -61,14 +58,14 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    setError('');
-    setSuccessMessage('');
+    setError("");
+    setSuccessMessage("");
 
     if (selectedFile) {
       // Validate file type
-      const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
-      if (!['xlsx', 'xls'].includes(fileExtension)) {
-        setError('Please upload a valid Excel file (.xlsx or .xls)');
+      const fileExtension = selectedFile.name.split(".").pop().toLowerCase();
+      if (!["xlsx", "xls"].includes(fileExtension)) {
+        setError("Please upload a valid Excel file (.xlsx or .xls)");
         setFile(null);
         return;
       }
@@ -84,14 +81,14 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const workbook = XLSX.read(data, { type: "array" });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
           // Trim all column names to remove leading/trailing spaces
-          const cleanedData = jsonData.map(row => {
+          const cleanedData = jsonData.map((row) => {
             const cleanedRow = {};
-            Object.keys(row).forEach(key => {
+            Object.keys(row).forEach((key) => {
               const trimmedKey = key.trim();
               cleanedRow[trimmedKey] = row[key];
             });
@@ -100,12 +97,12 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
           resolve(cleanedData);
         } catch (error) {
-          reject(new Error('Failed to parse Excel file'));
+          reject(new Error("Failed to parse Excel file"));
         }
       };
 
       reader.onerror = () => {
-        reject(new Error('Failed to read file'));
+        reject(new Error("Failed to read file"));
       };
 
       reader.readAsArrayBuffer(file);
@@ -114,17 +111,17 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccessMessage('');
+    setError("");
+    setSuccessMessage("");
 
     // Validation
     if (!selectedBranch) {
-      setError('Please select a branch');
+      setError("Please select a branch");
       return;
     }
 
     if (!file) {
-      setError('Please select an Excel file to upload');
+      setError("Please select an Excel file to upload");
       return;
     }
 
@@ -138,30 +135,30 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       setUploadProgress(30);
 
       if (!employeesData || employeesData.length === 0) {
-        throw new Error('No employee data found in the Excel file');
+        throw new Error("No employee data found in the Excel file");
       }
 
       // Helper function to parse employee name
       const parseEmployeeName = (fullName) => {
-        if (!fullName) return { firstName: '', lastName: '' };
+        if (!fullName) return { firstName: "", lastName: "" };
 
         const trimmedName = fullName.trim();
 
         // Check if name contains comma (format: "LastName, FirstName MiddleInitial")
-        if (trimmedName.includes(',')) {
-          const parts = trimmedName.split(',').map(s => s.trim());
+        if (trimmedName.includes(",")) {
+          const parts = trimmedName.split(",").map((s) => s.trim());
           const lastName = parts[0]; // Everything before comma
-          const firstName = parts.slice(1).join(' '); // Everything after comma
+          const firstName = parts.slice(1).join(" "); // Everything after comma
           return { firstName, lastName };
         }
 
         // Otherwise assume format: "FirstName MiddleInitial LastName"
         const nameParts = trimmedName.split(/\s+/);
         if (nameParts.length === 1) {
-          return { firstName: nameParts[0], lastName: '' };
+          return { firstName: nameParts[0], lastName: "" };
         }
         const lastName = nameParts[nameParts.length - 1];
-        const firstName = nameParts.slice(0, -1).join(' ');
+        const firstName = nameParts.slice(0, -1).join(" ");
         return { firstName, lastName };
       };
 
@@ -170,7 +167,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         if (!dateValue) return null;
 
         // Check if it's an Excel serial date (number)
-        if (typeof dateValue === 'number') {
+        if (typeof dateValue === "number") {
           // Excel date serial number (days since 1900-01-01, with 1900-01-01 = 1)
           const excelEpoch = new Date(1899, 11, 30); // December 30, 1899
           const msPerDay = 24 * 60 * 60 * 1000;
@@ -187,9 +184,9 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       const parseNumber = (value) => {
         if (!value && value !== 0) return 0;
         // If it's already a number, return it
-        if (typeof value === 'number') return value;
+        if (typeof value === "number") return value;
         // Remove currency symbols, commas, but keep decimal point and negative sign
-        const cleanedValue = value.toString().replace(/[$,\s]/g, '');
+        const cleanedValue = value.toString().replace(/[$,\s]/g, "");
         const num = parseFloat(cleanedValue);
         return isNaN(num) ? 0 : num;
       };
@@ -197,7 +194,11 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       // Helper function to safely get column value (handles spaces in column names)
       const getColumnValue = (row, ...columnNames) => {
         for (const colName of columnNames) {
-          if (row[colName] !== undefined && row[colName] !== null && row[colName] !== '') {
+          if (
+            row[colName] !== undefined &&
+            row[colName] !== null &&
+            row[colName] !== ""
+          ) {
             return row[colName];
           }
         }
@@ -206,23 +207,46 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
       // Transform data to match API format
       const formattedEmployees = employeesData.map((row, index) => {
-        const employeeName = getColumnValue(row, 'Employee Name', ' Employee Name ', 'employeeName', 'EmployeeName') || '';
+        const employeeName =
+          getColumnValue(
+            row,
+            "Employee Name",
+            " Employee Name ",
+            "employeeName",
+            "EmployeeName"
+          ) || "";
         const { firstName, lastName } = parseEmployeeName(employeeName);
 
-        const employeeNumber = getColumnValue(row, 'Employee Number', ' Employee Number ', 'employeeNumber', 'EmployeeNumber') || '';
-        const workEmail = getColumnValue(row, 'Work Email', ' Work Email ', 'workEmail', 'WorkEmail') || '';
+        const employeeNumber =
+          getColumnValue(
+            row,
+            "Employee Number",
+            " Employee Number ",
+            "employeeNumber",
+            "EmployeeNumber"
+          ) || "";
+        const workEmail =
+          getColumnValue(
+            row,
+            "Work Email",
+            " Work Email ",
+            "workEmail",
+            "WorkEmail"
+          ) || "";
 
         // Try multiple variations of the hourly pay rate column name
-        const rawHourlyRate = getColumnValue(row,
-          'Hourly Pay Rate',
-          ' Hourly Pay Rate ',  // With spaces
-          'hourly pay rate',
-          'Hourly pay rate',
-          'hourlyPayRate',
-          'HourlyPayRate',
-          'Hourly Rate',
-          'hourly rate'
-        ) || 0;
+        const rawHourlyRate =
+          getColumnValue(
+            row,
+            "Hourly Pay Rate",
+            " Hourly Pay Rate ", // With spaces
+            "hourly pay rate",
+            "Hourly pay rate",
+            "hourlyPayRate",
+            "HourlyPayRate",
+            "Hourly Rate",
+            "hourly rate"
+          ) || 0;
 
         const parsedHourlyRate = parseNumber(rawHourlyRate);
 
@@ -230,39 +254,158 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           employeeId: employeeNumber,
           firstName: firstName,
           lastName: lastName,
-          password: 'password123', // Default password
-          ssn: getColumnValue(row, 'SSN', ' SSN ', 'ssn') || '',
-          company: getColumnValue(row, 'Company', ' Company ', 'company') || '',
-          companyCode: getColumnValue(row, 'Company Code', ' Company Code ', 'companyCode', 'CompanyCode') || '',
-          supervisorName: getColumnValue(row, 'Supervisor Name', ' Supervisor Name ', 'supervisorName', 'SupervisorName') || '',
-          location: getColumnValue(row, 'Location', ' Location ', 'location') || '',
+          password: "password123", // Default password
+          ssn: getColumnValue(row, "SSN", " SSN ", "ssn") || "",
+          company: getColumnValue(row, "Company", " Company ", "company") || "",
+          companyCode:
+            getColumnValue(
+              row,
+              "Company Code",
+              " Company Code ",
+              "companyCode",
+              "CompanyCode"
+            ) || "",
+          supervisorName:
+            getColumnValue(
+              row,
+              "Supervisor Name",
+              " Supervisor Name ",
+              "supervisorName",
+              "SupervisorName"
+            ) || "",
+          location:
+            getColumnValue(row, "Location", " Location ", "location") || "",
           branch: selectedBranch,
-          jobTitle: getColumnValue(row, 'Job Title', ' Job Title ', 'jobTitle', 'JobTitle') || '',
-          employeeType: getColumnValue(row, 'Employee Type', ' Employee Type ', 'employeeType', 'EmployeeType') || '',
-          salaryType: getColumnValue(row, 'Salary or Hourly', ' Salary or Hourly ', 'salaryType', 'SalaryType') || null,
-          annualSalary: parseNumber(getColumnValue(row, 'Annual Salary', ' Annual Salary ', 'annualSalary', 'AnnualSalary') || 0),
+          jobTitle:
+            getColumnValue(
+              row,
+              "Job Title",
+              " Job Title ",
+              "jobTitle",
+              "JobTitle"
+            ) || "",
+          employeeType:
+            getColumnValue(
+              row,
+              "Employee Type",
+              " Employee Type ",
+              "employeeType",
+              "EmployeeType"
+            ) || "",
+          salaryType:
+            getColumnValue(
+              row,
+              "Salary or Hourly",
+              " Salary or Hourly ",
+              "salaryType",
+              "SalaryType"
+            ) || null,
+          annualSalary: parseNumber(
+            getColumnValue(
+              row,
+              "Annual Salary",
+              " Annual Salary ",
+              "annualSalary",
+              "AnnualSalary"
+            ) || 0
+          ),
           hourlyPayRate: parsedHourlyRate,
-          bonus2024: parseNumber(getColumnValue(row, '2024 Bonus', ' 2024 Bonus ', 'bonus2024') || 0),
-          bonus2025: parseNumber(getColumnValue(row, '2025 Bonus', ' 2025 Bonus ', 'bonus2025') || 0),
-          lastHireDate: parseDate(getColumnValue(row, 'Last Hire Date', ' Last Hire Date ', 'lastHireDate', 'LastHireDate')),
-          role: 'employee',
+          bonus2024: parseNumber(
+            getColumnValue(row, "2024 Bonus", " 2024 Bonus ", "bonus2024") || 0
+          ),
+          bonus2025: parseNumber(
+            getColumnValue(row, "2025 Bonus", " 2025 Bonus ", "bonus2025") || 0
+          ),
+          lastHireDate: parseDate(
+            getColumnValue(
+              row,
+              "Last Hire Date",
+              " Last Hire Date ",
+              "lastHireDate",
+              "LastHireDate"
+            )
+          ),
+
+          // Parse Role
+          role: (() => {
+            const rawRole =
+              getColumnValue(row, "Role", " Role ", "role", "Role") || "";
+            const normalizedRole = rawRole.toLowerCase().trim();
+            if (
+              ["employee", "hr", "approver", "admin"].includes(normalizedRole)
+            ) {
+              return normalizedRole;
+            }
+            return "employee";
+          })(),
+
+          // Set isApprover flag based on role
+          isApprover: (() => {
+            const rawRole =
+              getColumnValue(row, "Role", " Role ", "role", "Role") || "";
+            const normalizedRole = rawRole.toLowerCase().trim();
+            return normalizedRole === "approver";
+          })(),
+
           address: {
-            state: getColumnValue(row, 'State/Province', ' State/Province ', 'state', 'State') || '',
-            street: '',
-            city: '',
-            zipCode: '',
-            country: '',
+            state:
+              getColumnValue(
+                row,
+                "State/Province",
+                " State/Province ",
+                "state",
+                "State"
+              ) || "",
+            street: "",
+            city: "",
+            zipCode: "",
+            country: "",
           },
           // Store reporting hierarchy as temporary fields
-          reporting1st: getColumnValue(row, '1st Reporting', ' 1st Reporting ', 'reporting1st', '1stReporting') || '',
-          reporting2nd: getColumnValue(row, '2nd Reporting', ' 2nd Reporting ', 'reporting2nd', '2ndReporting') || '',
-          reporting3rd: getColumnValue(row, '3rd Reporting', ' 3rd Reporting ', 'reporting3rd', '3rdReporting') || '',
-          reporting4th: getColumnValue(row, '4th Reporting', ' 4th Reporting ', 'reporting4th', '4thReporting') || '',
-          reporting5th: getColumnValue(row, '5th Reporting', ' 5th Reporting ', 'reporting5th', '5thReporting') || '',
+          reporting1st:
+            getColumnValue(
+              row,
+              "1st Reporting",
+              " 1st Reporting ",
+              "reporting1st",
+              "1stReporting"
+            ) || "",
+          reporting2nd:
+            getColumnValue(
+              row,
+              "2nd Reporting",
+              " 2nd Reporting ",
+              "reporting2nd",
+              "2ndReporting"
+            ) || "",
+          reporting3rd:
+            getColumnValue(
+              row,
+              "3rd Reporting",
+              " 3rd Reporting ",
+              "reporting3rd",
+              "3rdReporting"
+            ) || "",
+          reporting4th:
+            getColumnValue(
+              row,
+              "4th Reporting",
+              " 4th Reporting ",
+              "reporting4th",
+              "4thReporting"
+            ) || "",
+          reporting5th:
+            getColumnValue(
+              row,
+              "5th Reporting",
+              " 5th Reporting ",
+              "reporting5th",
+              "5thReporting"
+            ) || "",
         };
 
         // Only add email if it exists and is not empty
-        if (workEmail && workEmail.trim() !== '') {
+        if (workEmail && workEmail.trim() !== "") {
           employeeData.email = workEmail.trim();
         }
 
@@ -291,10 +434,10 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
       // Send data to API
       const response = await fetch(`${API_URL}/api/employees/bulk`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ employees: uniqueEmployees }),
       });
@@ -310,23 +453,32 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         // Combine duplicates and skippedDuplicates
         const allDuplicates = [
           ...(data.duplicates || []),
-          ...(data.skippedDuplicates || [])
+          ...(data.skippedDuplicates || []),
         ];
 
         // Build detailed duplicate info
-        let duplicateInfo = '';
+        let duplicateInfo = "";
         if (allDuplicates.length > 0) {
           const duplicateDetails = allDuplicates
             .slice(0, 5)
-            .map(dup => `  • ${dup.employeeName || 'Unknown'} (${dup.employeeId}) - ${dup.reason}`)
-            .join('\n');
-          const moreMsg = allDuplicates.length > 5 ? `\n  ...and ${allDuplicates.length - 5} more` : '';
+            .map(
+              (dup) =>
+                `  • ${dup.employeeName || "Unknown"} (${dup.employeeId}) - ${
+                  dup.reason
+                }`
+            )
+            .join("\n");
+          const moreMsg =
+            allDuplicates.length > 5
+              ? `\n  ...and ${allDuplicates.length - 5} more`
+              : "";
           duplicateInfo = `\n\nSkipped entries:\n${duplicateDetails}${moreMsg}`;
         }
 
-        const excelDuplicatesInfo = skippedDuplicates.length > 0
-          ? `\n\nNote: Also removed ${skippedDuplicates.length} duplicate entries from Excel file before upload`
-          : '';
+        const excelDuplicatesInfo =
+          skippedDuplicates.length > 0
+            ? `\n\nNote: Also removed ${skippedDuplicates.length} duplicate entries from Excel file before upload`
+            : "";
 
         setSuccessMessage(
           `${data.message}${duplicateInfo}${excelDuplicatesInfo}`
@@ -334,7 +486,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
         // Reset form after a short delay
         setTimeout(() => {
-          setSelectedBranch('');
+          setSelectedBranch("");
           setFile(null);
           setUploadProgress(0);
           onEmployeesUploaded();
@@ -347,34 +499,43 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         if (data.errors && Array.isArray(data.errors)) {
           const errorDetails = data.errors
             .slice(0, 5)
-            .map((err) => `Row ${err.index}: ${err.employeeName} (${err.employeeId}) - ${err.reason}`)
-            .join('\n');
-          const moreErrors = data.errors.length > 5 ? `\n...and ${data.errors.length - 5} more` : '';
+            .map(
+              (err) =>
+                `Row ${err.index}: ${err.employeeName} (${err.employeeId}) - ${err.reason}`
+            )
+            .join("\n");
+          const moreErrors =
+            data.errors.length > 5
+              ? `\n...and ${data.errors.length - 5} more`
+              : "";
           throw new Error(`${data.message}\n\n${errorDetails}${moreErrors}`);
         }
-        throw new Error(data.message || 'Failed to upload employees');
+        throw new Error(data.message || "Failed to upload employees");
       }
 
       setUploadProgress(100);
       const reportingInfo = data.reportingMapped
         ? ` (${data.reportingMapped} reporting relationships mapped)`
-        : '';
-      const excelDuplicatesInfo = skippedDuplicates.length > 0
-        ? `\n\nNote: Skipped ${skippedDuplicates.length} duplicate entries from Excel file`
-        : '';
+        : "";
+      const excelDuplicatesInfo =
+        skippedDuplicates.length > 0
+          ? `\n\nNote: Skipped ${skippedDuplicates.length} duplicate entries from Excel file`
+          : "";
       setSuccessMessage(
-        `Successfully uploaded ${data.count || uniqueEmployees.length} employees${reportingInfo}!${excelDuplicatesInfo}`
+        `Successfully uploaded ${
+          data.count || uniqueEmployees.length
+        } employees${reportingInfo}!${excelDuplicatesInfo}`
       );
 
       // Reset form after a short delay
       setTimeout(() => {
-        setSelectedBranch('');
+        setSelectedBranch("");
         setFile(null);
         setUploadProgress(0);
         onEmployeesUploaded();
       }, 1500);
     } catch (err) {
-      setError(err.message || 'An error occurred while uploading employees');
+      setError(err.message || "An error occurred while uploading employees");
       setUploadProgress(0);
     } finally {
       setLoading(false);
@@ -383,10 +544,10 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
   const handleClose = () => {
     if (!loading) {
-      setSelectedBranch('');
+      setSelectedBranch("");
       setFile(null);
-      setError('');
-      setSuccessMessage('');
+      setError("");
+      setSuccessMessage("");
       setUploadProgress(0);
       onClose();
     }
@@ -406,7 +567,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       <DialogTitle>Upload Employees from Excel</DialogTitle>
       <DialogContent>
         {error && (
-          <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+          <Alert severity="error" sx={{ mb: 2, whiteSpace: "pre-wrap" }}>
             {error}
           </Alert>
         )}
@@ -439,18 +600,18 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
           <Box
             sx={{
-              border: '2px dashed',
-              borderColor: 'primary.main',
+              border: "2px dashed",
+              borderColor: "primary.main",
               borderRadius: 2,
               p: 3,
-              textAlign: 'center',
-              backgroundColor: 'action.hover',
+              textAlign: "center",
+              backgroundColor: "action.hover",
               mb: 2,
             }}
           >
             <input
               accept=".xlsx,.xls"
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
               id="excel-file-upload"
               type="file"
               onChange={handleFileChange}
@@ -467,33 +628,40 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               </Button>
             </label>
             {file && (
-              <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+              <Typography
+                variant="body2"
+                sx={{ mt: 2, color: "text.secondary" }}
+              >
                 Selected: {file.name}
               </Typography>
             )}
           </Box>
 
           {loading && (
-            <Box sx={{ width: '100%', mb: 2 }}>
+            <Box sx={{ width: "100%", mb: 2 }}>
               <LinearProgress variant="determinate" value={uploadProgress} />
-              <Typography variant="caption" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
+              <Typography
+                variant="caption"
+                sx={{ mt: 1, display: "block", textAlign: "center" }}
+              >
                 Uploading... {uploadProgress}%
               </Typography>
             </Box>
           )}
 
           <Alert severity="info" sx={{ mt: 2 }}>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
               Excel Format Requirements:
             </Typography>
             <Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
               <strong>Required columns:</strong> Employee Number, Employee Name
             </Typography>
             <Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-              <strong>Optional columns:</strong> SSN, Company, Company Code, Supervisor Name, Location,
-              1st Reporting, 2nd Reporting, 3rd Reporting, 4th Reporting, 5th Reporting, State/Province,
-              Work Email, Last Hire Date, Employee Type, Job Title, Salary or Hourly, Annual Salary,
-              Hourly Pay Rate, 2024 Bonus, 2025 Bonus
+              <strong>Optional columns:</strong> SSN, Company, Company Code,
+              Supervisor Name, Location, 1st Reporting, 2nd Reporting, 3rd
+              Reporting, 4th Reporting, 5th Reporting, State/Province, Work
+              Email, Last Hire Date, Employee Type, Job Title, Salary or Hourly,
+              Annual Salary, Hourly Pay Rate, 2024 Bonus, 2025 Bonus
             </Typography>
           </Alert>
         </Box>
@@ -507,7 +675,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           variant="contained"
           disabled={loading || !file || !selectedBranch}
         >
-          {loading ? 'Uploading...' : 'Upload Employees'}
+          {loading ? "Uploading..." : "Upload Employees"}
         </Button>
       </DialogActions>
     </Dialog>

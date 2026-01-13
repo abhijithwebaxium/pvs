@@ -6,20 +6,33 @@ import {
   Paper,
   Alert,
   CircularProgress,
+  TextField,
+  MenuItem,
+  InputAdornment,
+  Grid,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import SearchIcon from '@mui/icons-material/Search';
 import AddEmployeeModal from '../../components/modals/AddEmployeeModal';
 import UploadEmployeesModal from '../../components/modals/UploadEmployeesModal';
 import API_URL from '../../config/api';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openModal, setOpenModal] = useState(false);
   const [openUploadModal, setOpenUploadModal] = useState(false);
+
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -43,6 +56,7 @@ const Employees = () => {
       }
 
       setEmployees(data.data);
+      setFilteredEmployees(data.data);
     } catch (err) {
       setError(err.message || 'An error occurred while fetching employees');
     } finally {
@@ -50,9 +64,70 @@ const Employees = () => {
     }
   };
 
+  const fetchBranches = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/branches`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBranches(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch branches:', err);
+    }
+  };
+
   useEffect(() => {
     fetchEmployees();
+    fetchBranches();
   }, []);
+
+  // Apply filters whenever filter values change
+  useEffect(() => {
+    let filtered = [...employees];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (emp) =>
+          emp.employeeId?.toLowerCase().includes(query) ||
+          emp.firstName?.toLowerCase().includes(query) ||
+          emp.lastName?.toLowerCase().includes(query) ||
+          emp.email?.toLowerCase().includes(query) ||
+          `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(query)
+      );
+    }
+
+    // Branch filter
+    if (selectedBranch) {
+      filtered = filtered.filter(
+        (emp) => emp.branch?._id === selectedBranch
+      );
+    }
+
+    // Role filter
+    if (selectedRole) {
+      filtered = filtered.filter((emp) => emp.role === selectedRole);
+    }
+
+    // Status filter
+    if (selectedStatus !== '') {
+      const isActive = selectedStatus === 'active';
+      filtered = filtered.filter((emp) => emp.isActive === isActive);
+    }
+
+    setFilteredEmployees(filtered);
+  }, [searchQuery, selectedBranch, selectedRole, selectedStatus, employees]);
 
   const handleAddEmployee = () => {
     setOpenModal(true);
@@ -185,21 +260,98 @@ const Employees = () => {
       )}
 
       <Paper sx={{ width: '100%', mb: 2 }}>
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', gap:1 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddEmployee}
+        <Box sx={{ p: 2 }}>
+          {/* Search, Filters, and Action Buttons - All in one row */}
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              mb: 2,
+            }}
           >
-            Add Employee
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<CloudUploadIcon />}
-            onClick={handleUploadClick}
-          >
-            Upload Excel
-          </Button>
+            {/* Search Bar */}
+            <TextField
+              size="small"
+              placeholder="Search employees..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ minWidth: 250 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Branch Filter */}
+            <TextField
+              select
+              size="small"
+              label="Branch"
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">All Branches</MenuItem>
+              {branches.map((branch) => (
+                <MenuItem key={branch._id} value={branch._id}>
+                  {branch.branchCode} - {branch.branchName}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {/* Role Filter */}
+            <TextField
+              select
+              size="small"
+              label="Role"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              <MenuItem value="">All Roles</MenuItem>
+              <MenuItem value="employee">Employee</MenuItem>
+              <MenuItem value="approver">Approver</MenuItem>
+              <MenuItem value="hr">HR</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </TextField>
+
+            {/* Status Filter */}
+            <TextField
+              select
+              size="small"
+              label="Status"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              sx={{ minWidth: 130 }}
+            >
+              <MenuItem value="">All Status</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+            </TextField>
+
+            {/* Action Buttons - Push to the right */}
+            <Box sx={{ marginLeft: 'auto', display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleAddEmployee}
+              >
+                Add Employee
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<CloudUploadIcon />}
+                onClick={handleUploadClick}
+              >
+                Upload Excel
+              </Button>
+            </Box>
+          </Box>
         </Box>
 
         {loading ? (
@@ -215,7 +367,7 @@ const Employees = () => {
           </Box>
         ) : (
           <DataGrid
-            rows={employees}
+            rows={filteredEmployees}
             columns={columns}
             getRowId={(row) => row._id}
             initialState={{
