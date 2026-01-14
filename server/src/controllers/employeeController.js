@@ -898,7 +898,7 @@ export const getMyApprovals = async (req, res, next) => {
     const approverId =
       req.user?.userId || req.user?._id || req.query.approverId;
 
-    if (!approverId) {
+    if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
 
@@ -1131,7 +1131,11 @@ export const getMySupervisedEmployees = async (req, res, next) => {
     const supervisorId =
       req.user?.userId || req.user?._id || req.query.supervisorId;
 
-    if (!supervisorId) {
+    if (
+      !supervisorId ||
+      supervisorId === "undefined" ||
+      supervisorId === "null"
+    ) {
       return next(new AppError("Supervisor ID is required", 400));
     }
 
@@ -1193,7 +1197,11 @@ export const updateEmployeeBonus = async (req, res, next) => {
       req.body.supervisorId ||
       req.query.supervisorId;
 
-    if (!supervisorId) {
+    if (
+      !supervisorId ||
+      supervisorId === "undefined" ||
+      supervisorId === "null"
+    ) {
       return next(new AppError("Supervisor ID is required", 400));
     }
 
@@ -1299,7 +1307,7 @@ export const getMyBonusApprovals = async (req, res, next) => {
     const approverId =
       req.user?.userId || req.user?._id || req.query.approverId;
 
-    if (!approverId) {
+    if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
 
@@ -1396,7 +1404,7 @@ export const processBonusApproval = async (req, res, next) => {
       bodyApproverId ||
       req.query.approverId;
 
-    if (!approverId) {
+    if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
 
@@ -1529,7 +1537,7 @@ export const processApproval = async (req, res, next) => {
       bodyApproverId ||
       req.query.approverId;
 
-    if (!approverId) {
+    if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
 

@@ -19,8 +19,10 @@ const ApproverDashboard = ({ user }) => {
   });
 
   useEffect(() => {
-    fetchApprovalStats();
-  }, []);
+    if (user?._id) {
+      fetchApprovalStats();
+    }
+  }, [user]);
 
   const fetchApprovalStats = async () => {
     setLoading(true);

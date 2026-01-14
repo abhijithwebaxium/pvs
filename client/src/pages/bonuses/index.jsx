@@ -67,8 +67,10 @@ const Bonuses = () => {
   };
 
   useEffect(() => {
-    fetchMyTeam();
-  }, []);
+    if (user?._id) {
+      fetchMyTeam();
+    }
+  }, [user]);
 
   const handleOpenBonusDialog = (employee) => {
     setBonusDialog({

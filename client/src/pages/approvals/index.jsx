@@ -89,8 +89,10 @@ const Approvals = () => {
   };
 
   useEffect(() => {
-    fetchApprovals();
-  }, []);
+    if (user?._id) {
+      fetchApprovals();
+    }
+  }, [user]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
