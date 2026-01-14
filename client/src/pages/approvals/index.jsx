@@ -25,9 +25,12 @@ import { DataGrid } from "@mui/x-data-grid";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../store/slices/userSlice";
 import API_URL from "../../config/api";
 
 const Approvals = () => {
+  const user = useSelector(selectUser);
   const [approvalsData, setApprovalsData] = useState({
     level1: [],
     level2: [],
@@ -60,7 +63,7 @@ const Approvals = () => {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/employees/approvals/my-approvals`,
+        `${API_URL}/api/employees/approvals/my-approvals?approverId=${user?._id}`,
         {
           method: "GET",
           credentials: "include",
@@ -119,7 +122,7 @@ const Approvals = () => {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}`,
+        `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}?approverId=${user?._id}`,
         {
           method: "POST",
           credentials: "include",

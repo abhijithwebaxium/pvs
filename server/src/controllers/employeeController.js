@@ -892,10 +892,15 @@ export const debugApproverAssignments = async (req, res, next) => {
 
 // @desc    Get employees for approver (by approval level)
 // @route   GET /api/employees/approvals/my-approvals
-// @access  Private (Approver only)
+// @access  Private (Approver only) OR Public with approverId
 export const getMyApprovals = async (req, res, next) => {
   try {
-    const approverId = req.user.userId || req.user._id;
+    const approverId =
+      req.user?.userId || req.user?._id || req.query.approverId;
+
+    if (!approverId) {
+      return next(new AppError("Approver ID is required", 400));
+    }
 
     // Level 1: Only employees where this user is Level 1 approver
     const level1Employees = await Employee.find({
@@ -1120,10 +1125,15 @@ export const getMyApprovals = async (req, res, next) => {
 
 // @desc    Get employees under a supervisor
 // @route   GET /api/employees/supervisor/my-team
-// @access  Private (Supervisor only)
+// @access  Private (Supervisor only) OR Public with supervisorId
 export const getMySupervisedEmployees = async (req, res, next) => {
   try {
-    const supervisorId = req.user.userId || req.user._id;
+    const supervisorId =
+      req.user?.userId || req.user?._id || req.query.supervisorId;
+
+    if (!supervisorId) {
+      return next(new AppError("Supervisor ID is required", 400));
+    }
 
     const employees = await Employee.find({
       supervisor: supervisorId,
@@ -1177,7 +1187,15 @@ export const updateEmployeeBonus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { bonus2025 } = req.body;
-    const supervisorId = req.user.userId || req.user._id;
+    const supervisorId =
+      req.user?.userId ||
+      req.user?._id ||
+      req.body.supervisorId ||
+      req.query.supervisorId;
+
+    if (!supervisorId) {
+      return next(new AppError("Supervisor ID is required", 400));
+    }
 
     if (bonus2025 === undefined || bonus2025 === null) {
       return next(new AppError("Bonus amount is required", 400));
@@ -1275,10 +1293,15 @@ export const updateEmployeeBonus = async (req, res, next) => {
 
 // @desc    Get employees pending bonus approval for approver
 // @route   GET /api/employees/bonus-approvals/my-approvals
-// @access  Private (Approver only)
+// @access  Private (Approver only) OR Public with approverId
 export const getMyBonusApprovals = async (req, res, next) => {
   try {
-    const approverId = req.user.userId || req.user._id;
+    const approverId =
+      req.user?.userId || req.user?._id || req.query.approverId;
+
+    if (!approverId) {
+      return next(new AppError("Approver ID is required", 400));
+    }
 
     // Helper function to determine the next required approval level
     const getNextApprovalLevel = (employee) => {
@@ -1362,12 +1385,20 @@ export const getMyBonusApprovals = async (req, res, next) => {
 
 // @desc    Process bonus approval/rejection
 // @route   POST /api/employees/:employeeId/bonus-approval
-// @access  Private (Approver only)
+// @access  Private (Approver only) OR Public with approverId
 export const processBonusApproval = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
-    const { action, comments } = req.body;
-    const approverId = req.user.userId || req.user._id;
+    const { action, comments, approverId: bodyApproverId } = req.body;
+    const approverId =
+      req.user?.userId ||
+      req.user?._id ||
+      bodyApproverId ||
+      req.query.approverId;
+
+    if (!approverId) {
+      return next(new AppError("Approver ID is required", 400));
+    }
 
     // Validate input
     if (!action) {
@@ -1487,12 +1518,20 @@ export const processBonusApproval = async (req, res, next) => {
 
 // @desc    Process approval/rejection for an employee
 // @route   POST /api/employees/approvals/:employeeId
-// @access  Private (Approver only)
+// @access  Private (Approver only) OR Public with approverId
 export const processApproval = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
-    const { level, action, comments } = req.body;
-    const approverId = req.user.userId || req.user._id;
+    const { level, action, comments, approverId: bodyApproverId } = req.body;
+    const approverId =
+      req.user?.userId ||
+      req.user?._id ||
+      bodyApproverId ||
+      req.query.approverId;
+
+    if (!approverId) {
+      return next(new AppError("Approver ID is required", 400));
+    }
 
     // Validate input
     if (!level || !action) {

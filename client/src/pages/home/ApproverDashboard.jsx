@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Grid, Card, CardContent, Typography, Box, CircularProgress } from "@mui/material";
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress,
+} from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import API_URL from "../../config/api";
@@ -18,25 +25,31 @@ const ApproverDashboard = ({ user }) => {
   const fetchApprovalStats = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/employees/approvals/my-approvals`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/employees/approvals/my-approvals?approverId=${user?._id}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (response.ok) {
         // Total pending = sum of all level counts (these are employees awaiting approval)
-        const totalPending = Object.values(data.counts || {}).reduce((sum, count) => sum + count, 0);
+        const totalPending = Object.values(data.counts || {}).reduce(
+          (sum, count) => sum + count,
+          0
+        );
 
         // Total approved = count employees where current user has approved at their level
         let totalApproved = 0;
 
         Object.entries(data.data).forEach(([levelKey, levelData]) => {
-          const level = parseInt(levelKey.replace('level', ''));
+          const level = parseInt(levelKey.replace("level", ""));
           levelData.forEach((employee) => {
             const status = employee.approvalStatus?.[`level${level}`]?.status;
             if (status === "approved") {
@@ -86,7 +99,10 @@ const ApproverDashboard = ({ user }) => {
                   >
                     <PendingActionsIcon sx={{ fontSize: 32 }} />
                   </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 600, letterSpacing: 0.5 }}
+                  >
                     Pending Approvals
                   </Typography>
                 </Box>
@@ -153,7 +169,10 @@ const ApproverDashboard = ({ user }) => {
                   >
                     <CheckCircleIcon sx={{ fontSize: 32 }} />
                   </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 600, letterSpacing: 0.5 }}
+                  >
                     Approved
                   </Typography>
                 </Box>

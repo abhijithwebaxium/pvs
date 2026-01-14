@@ -1,7 +1,8 @@
-import jwt from 'jsonwebtoken';
-import Employee from '../models/Employee.js';
-import AppError from '../utils/appError.js';
+import jwt from "jsonwebtoken";
+import Employee from "../models/Employee.js";
+import AppError from "../utils/appError.js";
 
+// Protect routes - verify JWT token
 // Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
   try {
@@ -12,13 +13,14 @@ export const protect = async (req, res, next) => {
       token = req.cookies.token;
     } else if (
       req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
+      req.headers.authorization.startsWith("Bearer")
     ) {
-      token = req.headers.authorization.split(' ')[1];
+      token = req.headers.authorization.split(" ")[1];
     }
 
     if (!token) {
-      return next(new AppError('Not authorized to access this route', 401));
+      // Allow request to proceed without user (optional auth)
+      return next();
     }
 
     try {
@@ -26,9 +28,10 @@ export const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Check if user still exists
-      const user = await Employee.findById(decoded.userId).select('-password');
+      const user = await Employee.findById(decoded.userId).select("-password");
       if (!user || !user.isActive) {
-        return next(new AppError('User no longer exists or is inactive', 401));
+        // Token exists but user invalid -> proceed as unauthenticated
+        return next();
       }
 
       // Add user data to request
@@ -40,7 +43,8 @@ export const protect = async (req, res, next) => {
 
       next();
     } catch (err) {
-      return next(new AppError('Invalid or expired token', 401));
+      // Token invalid -> proceed as unauthenticated
+      return next();
     }
   } catch (error) {
     next(error);
