@@ -62,8 +62,9 @@ const Approvals = () => {
     setError("");
 
     try {
+      const userId = user?.id || user?._id;
       const response = await fetch(
-        `${API_URL}/api/employees/approvals/my-approvals?approverId=${user?._id}`,
+        `${API_URL}/api/employees/approvals/my-approvals?approverId=${userId}`,
         {
           method: "GET",
           credentials: "include",
@@ -89,7 +90,7 @@ const Approvals = () => {
   };
 
   useEffect(() => {
-    if (user?._id) {
+    if (user?.id || user?._id) {
       fetchApprovals();
     }
   }, [user]);
@@ -123,8 +124,9 @@ const Approvals = () => {
     setError("");
 
     try {
+      const userId = user?.id || user?._id;
       const response = await fetch(
-        `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}?approverId=${user?._id}`,
+        `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}?approverId=${userId}`,
         {
           method: "POST",
           credentials: "include",

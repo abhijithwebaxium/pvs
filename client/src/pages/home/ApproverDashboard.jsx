@@ -19,7 +19,7 @@ const ApproverDashboard = ({ user }) => {
   });
 
   useEffect(() => {
-    if (user?._id) {
+    if (user?.id || user?._id) {
       fetchApprovalStats();
     }
   }, [user]);
@@ -27,8 +27,9 @@ const ApproverDashboard = ({ user }) => {
   const fetchApprovalStats = async () => {
     setLoading(true);
     try {
+      const userId = user?.id || user?._id;
       const response = await fetch(
-        `${API_URL}/api/employees/approvals/my-approvals?approverId=${user?._id}`,
+        `${API_URL}/api/employees/approvals/my-approvals?approverId=${userId}`,
         {
           method: "GET",
           credentials: "include",

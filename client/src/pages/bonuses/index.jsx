@@ -41,8 +41,9 @@ const Bonuses = () => {
     setError("");
 
     try {
+      const userId = user?.id || user?._id;
       const response = await fetch(
-        `${API_URL}/api/employees/supervisor/my-team?supervisorId=${user?._id}`,
+        `${API_URL}/api/employees/supervisor/my-team?supervisorId=${userId}`,
         {
           method: "GET",
           credentials: "include",
@@ -67,7 +68,7 @@ const Bonuses = () => {
   };
 
   useEffect(() => {
-    if (user?._id) {
+    if (user?.id || user?._id) {
       fetchMyTeam();
     }
   }, [user]);
@@ -98,8 +99,9 @@ const Bonuses = () => {
     setError("");
 
     try {
+      const userId = user?.id || user?._id;
       const response = await fetch(
-        `${API_URL}/api/employees/${bonusDialog.employee._id}/bonus?supervisorId=${user?._id}`,
+        `${API_URL}/api/employees/${bonusDialog.employee._id}/bonus?supervisorId=${userId}`,
         {
           method: "PUT",
           credentials: "include",
