@@ -15,7 +15,9 @@ export const protect = async (req, res, next) => {
     ) {
       token = req.headers.authorization.split(" ")[1];
     }
-console.log(token, "token check")
+    console.log(token, "token 1");
+    console.log(req.cookies.token, "token 2");
+    console.log(req.headers.authorization, "token 3");
     if (!token) {
       req.user = { isAuthenticated: false };
       return next(); // Continue without blocking
