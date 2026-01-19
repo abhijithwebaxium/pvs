@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
@@ -58,7 +58,7 @@ const EmployeeSchema = new Schema(
     },
     branch: {
       type: Schema.Types.ObjectId,
-      ref: 'Branch',
+      ref: "Branch",
       default: null,
     },
     location: {
@@ -67,7 +67,7 @@ const EmployeeSchema = new Schema(
     },
     supervisor: {
       type: Schema.Types.ObjectId,
-      ref: 'Employee',
+      ref: "Employee",
       default: null,
     },
     supervisorName: {
@@ -76,8 +76,8 @@ const EmployeeSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ['employee', 'hr', 'approver', 'admin'],
-      default: 'employee',
+      enum: ["employee", "hr", "approver", "admin"],
+      default: "employee",
     },
     hireDate: {
       type: Date,
@@ -92,7 +92,7 @@ const EmployeeSchema = new Schema(
     },
     salaryType: {
       type: String,
-      enum: ['Salary', 'Salaried', 'Hourly', null],
+      enum: ["Salary", "Salaried", "Hourly", null],
       default: null,
     },
     salary: {
@@ -115,118 +115,6 @@ const EmployeeSchema = new Schema(
       type: Number,
       default: 0,
     },
-    // Bonus approval tracking for 2025
-    bonus2025Status: {
-      enteredBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'Employee',
-        default: null,
-      },
-      enteredAt: {
-        type: Date,
-        default: null,
-      },
-      level1: {
-        status: {
-          type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
-        },
-        approvedBy: {
-          type: Schema.Types.ObjectId,
-          ref: 'Employee',
-          default: null,
-        },
-        approvedAt: {
-          type: Date,
-          default: null,
-        },
-        comments: {
-          type: String,
-          trim: true,
-        },
-      },
-      level2: {
-        status: {
-          type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
-        },
-        approvedBy: {
-          type: Schema.Types.ObjectId,
-          ref: 'Employee',
-          default: null,
-        },
-        approvedAt: {
-          type: Date,
-          default: null,
-        },
-        comments: {
-          type: String,
-          trim: true,
-        },
-      },
-      level3: {
-        status: {
-          type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
-        },
-        approvedBy: {
-          type: Schema.Types.ObjectId,
-          ref: 'Employee',
-          default: null,
-        },
-        approvedAt: {
-          type: Date,
-          default: null,
-        },
-        comments: {
-          type: String,
-          trim: true,
-        },
-      },
-      level4: {
-        status: {
-          type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
-        },
-        approvedBy: {
-          type: Schema.Types.ObjectId,
-          ref: 'Employee',
-          default: null,
-        },
-        approvedAt: {
-          type: Date,
-          default: null,
-        },
-        comments: {
-          type: String,
-          trim: true,
-        },
-      },
-      level5: {
-        status: {
-          type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
-        },
-        approvedBy: {
-          type: Schema.Types.ObjectId,
-          ref: 'Employee',
-          default: null,
-        },
-        approvedAt: {
-          type: Date,
-          default: null,
-        },
-        comments: {
-          type: String,
-          trim: true,
-        },
-      },
-    },
     phone: {
       type: String,
       trim: true,
@@ -236,7 +124,7 @@ const EmployeeSchema = new Schema(
       city: { type: String, trim: true },
       state: { type: String, trim: true },
       zipCode: { type: String, trim: true },
-      country: { type: String, default: 'USA', trim: true },
+      country: { type: String, default: "USA", trim: true },
     },
     isApprover: {
       type: Boolean,
@@ -244,12 +132,12 @@ const EmployeeSchema = new Schema(
     },
     approverLevel: {
       type: String,
-      enum: ['Level-1', 'Level-2', 'Level-3', 'Level-4', 'Level-5', null],
+      enum: ["Level-1", "Level-2", "Level-3", "Level-4", "Level-5", null],
       default: null,
     },
     level1Approver: {
       type: Schema.Types.ObjectId,
-      ref: 'Employee',
+      ref: "Employee",
       default: null,
     },
     level1ApproverName: {
@@ -258,7 +146,7 @@ const EmployeeSchema = new Schema(
     },
     level2Approver: {
       type: Schema.Types.ObjectId,
-      ref: 'Employee',
+      ref: "Employee",
       default: null,
     },
     level2ApproverName: {
@@ -267,7 +155,7 @@ const EmployeeSchema = new Schema(
     },
     level3Approver: {
       type: Schema.Types.ObjectId,
-      ref: 'Employee',
+      ref: "Employee",
       default: null,
     },
     level3ApproverName: {
@@ -276,7 +164,7 @@ const EmployeeSchema = new Schema(
     },
     level4Approver: {
       type: Schema.Types.ObjectId,
-      ref: 'Employee',
+      ref: "Employee",
       default: null,
     },
     level4ApproverName: {
@@ -285,7 +173,7 @@ const EmployeeSchema = new Schema(
     },
     level5Approver: {
       type: Schema.Types.ObjectId,
-      ref: 'Employee',
+      ref: "Employee",
       default: null,
     },
     level5ApproverName: {
@@ -294,15 +182,24 @@ const EmployeeSchema = new Schema(
     },
     // Approval status tracking
     approvalStatus: {
+      enteredBy: {
+        type: Schema.Types.ObjectId,
+        ref: "Employee",
+        default: null,
+      },
+      enteredAt: {
+        type: Date,
+        default: null,
+      },
       level1: {
         status: {
           type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
+          enum: ["pending", "approved", "rejected", "not_required"],
+          default: "not_required",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
-          ref: 'Employee',
+          ref: "Employee",
           default: null,
         },
         approvedAt: {
@@ -317,12 +214,12 @@ const EmployeeSchema = new Schema(
       level2: {
         status: {
           type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
+          enum: ["pending", "approved", "rejected", "not_required"],
+          default: "not_required",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
-          ref: 'Employee',
+          ref: "Employee",
           default: null,
         },
         approvedAt: {
@@ -337,12 +234,12 @@ const EmployeeSchema = new Schema(
       level3: {
         status: {
           type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
+          enum: ["pending", "approved", "rejected", "not_required"],
+          default: "not_required",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
-          ref: 'Employee',
+          ref: "Employee",
           default: null,
         },
         approvedAt: {
@@ -357,12 +254,12 @@ const EmployeeSchema = new Schema(
       level4: {
         status: {
           type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
+          enum: ["pending", "approved", "rejected", "not_required"],
+          default: "not_required",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
-          ref: 'Employee',
+          ref: "Employee",
           default: null,
         },
         approvedAt: {
@@ -377,12 +274,12 @@ const EmployeeSchema = new Schema(
       level5: {
         status: {
           type: String,
-          enum: ['pending', 'approved', 'rejected', 'not_required'],
-          default: 'not_required',
+          enum: ["pending", "approved", "rejected", "not_required"],
+          default: "not_required",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
-          ref: 'Employee',
+          ref: "Employee",
           default: null,
         },
         approvedAt: {
@@ -400,10 +297,10 @@ const EmployeeSchema = new Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-EmployeeSchema.pre('validate', function () {
+EmployeeSchema.pre("validate", function () {
   if (!this.isApprover) {
     this.approverLevel = null;
   }
@@ -419,4 +316,4 @@ EmployeeSchema.index({ level3Approver: 1 });
 EmployeeSchema.index({ level4Approver: 1 });
 EmployeeSchema.index({ level5Approver: 1 });
 
-export default model('Employee', EmployeeSchema);
+export default model("Employee", EmployeeSchema);

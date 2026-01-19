@@ -131,12 +131,29 @@ const Bonuses = () => {
   };
 
   const getApprovalStatus = (employee) => {
-    if (!employee.bonus2025Status?.enteredBy) {
+    if (!employee)
+      return { status: "not_entered", label: "Not Entered", color: "default" };
+
+    // A bonus is considered entered if ANY of these are true:
+    // 1. enteredBy metadata is present
+    // 2. A bonus amount for 2025 is actually set (non-zero)
+    // 3. Any approval level is no longer 'not_required'
+    const hasMetadata = !!employee.approvalStatus?.enteredBy;
+    const hasBonusValue =
+      employee.bonus2025 && parseFloat(employee.bonus2025) > 0;
+
+    // Check if any level is active (pending, approved, or rejected)
+    const levels = ["level1", "level2", "level3", "level4", "level5"];
+    const hasActiveProcess = levels.some((lvl) => {
+      const status = employee.approvalStatus?.[lvl]?.status;
+      return status && !["not_required", "unknown"].includes(status);
+    });
+
+    if (!hasMetadata && !hasBonusValue && !hasActiveProcess) {
       return { status: "not_entered", label: "Not Entered", color: "default" };
     }
 
     // Check all approval levels and track progress
-    const levels = ["level1", "level2", "level3", "level4", "level5"];
     let approvedCount = 0;
     let totalRequired = 0;
     let currentStage = null;
@@ -145,7 +162,7 @@ const Bonuses = () => {
     for (let i = 0; i < levels.length; i++) {
       const level = levels[i];
       const approverField = `${level}Approver`;
-      const status = employee.bonus2025Status?.[level]?.status;
+      const status = employee.approvalStatus?.[level]?.status;
 
       // Check if this level has an approver
       if (employee[approverField]) {
@@ -186,7 +203,7 @@ const Bonuses = () => {
   };
 
   const getNextApprover = (employee) => {
-    if (!employee.bonus2025Status?.enteredBy) {
+    if (!employee || !employee.approvalStatus?.enteredBy) {
       return "N/A";
     }
 
@@ -199,7 +216,7 @@ const Bonuses = () => {
     ];
 
     for (const level of levels) {
-      const status = employee.bonus2025Status?.[level.key]?.status;
+      const status = employee.approvalStatus?.[level.key]?.status;
 
       // Check if this level has an approver assigned
       if (level.approver) {
@@ -367,7 +384,7 @@ const Bonuses = () => {
           Assign Employee Bonuses
         </Typography>
 
-        <Box sx={{ textAlign: "right", pr: 2,}}>
+        <Box sx={{ textAlign: "right", pr: 2 }}>
           <Typography
             variant="caption"
             sx={{ color: "text.secondary", fontWeight: "medium" }}
@@ -455,7 +472,9 @@ const Bonuses = () => {
         fullWidth
       >
         <DialogTitle>
-          {bonusDialog.employee?.bonus2025Status?.enteredBy ? "Edit" : "Add"}{" "}
+          {getApprovalStatus(bonusDialog.employee).status !== "not_entered"
+            ? "Edit"
+            : "Add"}{" "}
           Bonus for {bonusDialog.employee?.firstName}{" "}
           {bonusDialog.employee?.lastName}
         </DialogTitle>

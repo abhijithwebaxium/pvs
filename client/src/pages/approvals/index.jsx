@@ -154,8 +154,19 @@ const Approvals = () => {
   };
 
   const canApprove = (employee, level) => {
+    // REQUIREMENT: Bonus must be entered
+    // Consider it entered if enteredBy metadata exists OR bonus2025 is greater than 0
+    const isBonusEntered = !!(
+      employee.approvalStatus?.enteredBy ||
+      (employee.bonus2025 && parseFloat(employee.bonus2025) > 0)
+    );
+
+    if (!isBonusEntered) {
+      return { can: false, reason: "bonus_missing" };
+    }
+
     // Check if previous levels are approved
-    if (level === 1) return true; // Level 1 can always approve
+    if (level === 1) return { can: true };
 
     // For level 2+, check if previous levels are complete
     for (let i = 1; i < level; i++) {
@@ -163,16 +174,14 @@ const Approvals = () => {
       const approverField = `${levelKey}Approver`;
       const status = employee.approvalStatus?.[levelKey]?.status;
 
-      // If previous level has an approver assigned, it must be approved
       if (employee[approverField]) {
         if (status !== "approved") {
-          return false;
+          return { can: false, reason: "prev_level_pending", prevLevel: i };
         }
       }
-      // If no approver at previous level, it's automatically considered complete
     }
 
-    return true;
+    return { can: true };
   };
 
   const getActionsColumn = (level) => ({
@@ -187,7 +196,18 @@ const Approvals = () => {
       const isPending = currentStatus === "pending";
       const isApproved = currentStatus === "approved";
       const isRejected = currentStatus === "rejected";
-      const canPerformAction = canApprove(params.row, level);
+      const approvalState = canApprove(params.row, level);
+      const canPerformAction = approvalState.can;
+
+      const getTooltipTitle = (action) => {
+        if (canPerformAction)
+          return action === "approve" ? "Approve" : "Reject";
+        if (approvalState.reason === "bonus_missing")
+          return "Bonus must be assigned before approval";
+        if (approvalState.reason === "prev_level_pending")
+          return `Level ${approvalState.prevLevel} must be approved first`;
+        return "Not authorized at this time";
+      };
 
       if (isApproved) {
         return (
@@ -213,13 +233,7 @@ const Approvals = () => {
 
       return (
         <Box sx={{ display: "flex", gap: 0.5 }}>
-          <Tooltip
-            title={
-              canPerformAction
-                ? "Approve"
-                : "Previous levels must be approved first"
-            }
-          >
+          <Tooltip title={getTooltipTitle("approve")}>
             <span>
               <IconButton
                 size="small"
@@ -233,13 +247,7 @@ const Approvals = () => {
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip
-            title={
-              canPerformAction
-                ? "Reject"
-                : "Previous levels must be approved first"
-            }
-          >
+          <Tooltip title={getTooltipTitle("reject")}>
             <span>
               <IconButton
                 size="small"
@@ -743,7 +751,18 @@ const Approvals = () => {
           params.row.approvalStatus?.[`level${level}`]?.status || "pending";
         const isApproved = currentStatus === "approved";
         const isRejected = currentStatus === "rejected";
-        const canPerformAction = canApprove(params.row, level);
+        const approvalState = canApprove(params.row, level);
+        const canPerformAction = approvalState.can;
+
+        const getTooltipTitle = (action) => {
+          if (canPerformAction)
+            return action === "approve" ? "Approve" : "Reject";
+          if (approvalState.reason === "bonus_missing")
+            return "Bonus must be assigned before approval";
+          if (approvalState.reason === "prev_level_pending")
+            return `Level ${approvalState.prevLevel} must be approved first`;
+          return "Not authorized at this time";
+        };
 
         if (isApproved)
           return (
@@ -766,13 +785,7 @@ const Approvals = () => {
 
         return (
           <Box sx={{ display: "flex", gap: 0.5 }}>
-            <Tooltip
-              title={
-                canPerformAction
-                  ? "Approve"
-                  : "Previous levels must be approved first"
-              }
-            >
+            <Tooltip title={getTooltipTitle("approve")}>
               <span>
                 <IconButton
                   size="small"
@@ -786,13 +799,7 @@ const Approvals = () => {
                 </IconButton>
               </span>
             </Tooltip>
-            <Tooltip
-              title={
-                canPerformAction
-                  ? "Reject"
-                  : "Previous levels must be approved first"
-              }
-            >
+            <Tooltip title={getTooltipTitle("reject")}>
               <span>
                 <IconButton
                   size="small"
