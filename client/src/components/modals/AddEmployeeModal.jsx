@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -13,9 +13,9 @@ import {
   MenuItem,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import API_URL from '../../config/api';
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import api from "../../utils/api";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -23,25 +23,25 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
   const [formData, setFormData] = useState({
-    employeeId: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    branch: '',
-    department: '',
-    phone: '',
-    role: 'employee',
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
+    employeeId: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    branch: "",
+    department: "",
+    phone: "",
+    role: "employee",
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
   });
   const [branches, setBranches] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -51,22 +51,8 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
 
   const fetchBranches = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/branches?isActive=true`,
-        {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setBranches(data.data);
-      }
+      const response = await api.get("/api/branches?isActive=true");
+      setBranches(response.data.data);
     } catch (err) {
       // Error fetching branches
     }
@@ -77,12 +63,12 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validation
     if (
@@ -92,12 +78,12 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
       !formData.email ||
       !formData.password
     ) {
-      setError('Employee ID, Name, Email, and Password are required');
+      setError("Employee ID, Name, Email, and Password are required");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError("Password must be at least 6 characters long");
       return;
     }
 
@@ -123,43 +109,30 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         },
       };
 
-      const response = await fetch(`${API_URL}/api/employees`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create employee');
-      }
+      await api.post("/api/employees", payload);
 
       // Reset form
       setFormData({
-        employeeId: '',
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        branch: '',
-        department: '',
-        phone: '',
-        role: 'employee',
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: '',
+        employeeId: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        branch: "",
+        department: "",
+        phone: "",
+        role: "employee",
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
       });
       setShowPassword(false);
 
       onEmployeeAdded();
     } catch (err) {
-      setError(err.message || 'An error occurred while creating employee');
+      setError(err.message || "An error occurred while creating employee");
     } finally {
       setLoading(false);
     }
@@ -168,23 +141,23 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
   const handleClose = () => {
     if (!loading) {
       setFormData({
-        employeeId: '',
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        branch: '',
-        department: '',
-        phone: '',
-        role: 'employee',
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: '',
+        employeeId: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        branch: "",
+        department: "",
+        phone: "",
+        role: "employee",
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
       });
       setShowPassword(false);
-      setError('');
+      setError("");
       onClose();
     }
   };
@@ -277,7 +250,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 fullWidth
                 name="password"
                 label="Password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
@@ -393,7 +366,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
           Cancel
         </Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Employee'}
+          {loading ? "Adding..." : "Add Employee"}
         </Button>
       </DialogActions>
     </Dialog>

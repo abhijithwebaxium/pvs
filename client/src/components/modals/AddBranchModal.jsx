@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,8 +10,8 @@ import {
   Alert,
   Slide,
   Grid,
-} from '@mui/material';
-import API_URL from '../../config/api';
+} from "@mui/material";
+import api from "../../utils/api";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -19,35 +19,35 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 const AddBranchModal = ({ open, onClose, onBranchAdded }) => {
   const [formData, setFormData] = useState({
-    branchCode: '',
-    branchName: '',
-    location: '',
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    phone: '',
-    email: '',
+    branchCode: "",
+    branchName: "",
+    location: "",
+    street: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
+    phone: "",
+    email: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validation
     if (!formData.branchCode || !formData.branchName || !formData.location) {
-      setError('Branch Code, Branch Name, and Location are required');
+      setError("Branch Code, Branch Name, and Location are required");
       return;
     }
 
@@ -71,38 +71,25 @@ const AddBranchModal = ({ open, onClose, onBranchAdded }) => {
         },
       };
 
-      const response = await fetch(`${API_URL}/api/branches`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create branch');
-      }
+      await api.post("/api/branches", payload);
 
       // Reset form
       setFormData({
-        branchCode: '',
-        branchName: '',
-        location: '',
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: '',
-        phone: '',
-        email: '',
+        branchCode: "",
+        branchName: "",
+        location: "",
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
+        phone: "",
+        email: "",
       });
 
       onBranchAdded();
     } catch (err) {
-      setError(err.message || 'An error occurred while creating branch');
+      setError(err.message || "An error occurred while creating branch");
     } finally {
       setLoading(false);
     }
@@ -111,18 +98,18 @@ const AddBranchModal = ({ open, onClose, onBranchAdded }) => {
   const handleClose = () => {
     if (!loading) {
       setFormData({
-        branchCode: '',
-        branchName: '',
-        location: '',
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: '',
-        phone: '',
-        email: '',
+        branchCode: "",
+        branchName: "",
+        location: "",
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
+        phone: "",
+        email: "",
       });
-      setError('');
+      setError("");
       onClose();
     }
   };
@@ -157,7 +144,7 @@ const AddBranchModal = ({ open, onClose, onBranchAdded }) => {
                 value={formData.branchCode}
                 onChange={handleChange}
                 disabled={loading}
-                inputProps={{ style: { textTransform: 'uppercase' } }}
+                inputProps={{ style: { textTransform: "uppercase" } }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -262,7 +249,7 @@ const AddBranchModal = ({ open, onClose, onBranchAdded }) => {
           Cancel
         </Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Branch'}
+          {loading ? "Adding..." : "Add Branch"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -13,7 +13,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import PeopleIcon from "@mui/icons-material/People";
 import BusinessIcon from "@mui/icons-material/Business";
 import useDashboardStats from "../../hooks/useDashboardStats";
-import API_URL from "../../config/api";
+import api from "../../utils/api";
 
 const HRDashboard = ({ user }) => {
   const {
@@ -31,25 +31,14 @@ const HRDashboard = ({ user }) => {
       setLoading(true);
       setError("");
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_URL}/api/employees`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch employees");
-        }
-
-        setEmployees(data.data);
+        const response = await api.get("/api/employees");
+        setEmployees(response.data.data);
       } catch (err) {
-        setError(err.message || "An error occurred while fetching employees");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "An error occurred while fetching employees",
+        );
       } finally {
         setLoading(false);
       }

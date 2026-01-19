@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import API_URL from "../../config/api";
+import api from "../../utils/api";
 
 const ApproverDashboard = ({ user }) => {
   const [loading, setLoading] = useState(true);
@@ -28,24 +28,17 @@ const ApproverDashboard = ({ user }) => {
     setLoading(true);
     try {
       const userId = user?.id || user?._id;
-      const response = await fetch(
-        `${API_URL}/api/employees/approvals/my-approvals?approverId=${userId}`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get(
+        `/api/employees/approvals/my-approvals?approverId=${userId}`,
       );
 
-      const data = await response.json();
+      const { data } = response;
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         // Total pending = sum of all level counts (these are employees awaiting approval)
         const totalPending = Object.values(data.counts || {}).reduce(
           (sum, count) => sum + count,
-          0
+          0,
         );
 
         // Total approved = count employees where current user has approved at their level

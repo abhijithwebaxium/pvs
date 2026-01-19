@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -10,65 +10,63 @@ import {
   MenuItem,
   InputAdornment,
   Grid,
-} from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-import AddIcon from '@mui/icons-material/Add';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import SearchIcon from '@mui/icons-material/Search';
-import AddEmployeeModal from '../../components/modals/AddEmployeeModal';
-import UploadEmployeesModal from '../../components/modals/UploadEmployeesModal';
-// import API_URL from '../../config/api';
-import api from '../../utils/api';
+} from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import AddIcon from "@mui/icons-material/Add";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import SearchIcon from "@mui/icons-material/Search";
+import AddEmployeeModal from "../../components/modals/AddEmployeeModal";
+import UploadEmployeesModal from "../../components/modals/UploadEmployeesModal";
+// import api from '../../utils/api';
+import api from "../../utils/api";
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [openUploadModal, setOpenUploadModal] = useState(false);
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
-const fetchEmployees = async () => {
-  setLoading(true);
-  setError('');
+  const fetchEmployees = async () => {
+    setLoading(true);
+    setError("");
 
-  try {
-    const response = await api.get('/api/employees');
-    const { data } = response;
+    try {
+      const response = await api.get("/api/employees");
+      const { data } = response;
 
-    setEmployees(data.data);
-    setFilteredEmployees(data.data);
-  } catch (err) {
-    const errorMessage =
-      err.response?.data?.message ||
-      err.message ||
-      'An error occurred while fetching employees';
+      setEmployees(data.data);
+      setFilteredEmployees(data.data);
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while fetching employees";
 
-    setError(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const fetchBranches = async () => {
-  try {
-    const response = await api.get('/api/branches');
-    const { data } = response;
+  const fetchBranches = async () => {
+    try {
+      const response = await api.get("/api/branches");
+      const { data } = response;
 
-    setBranches(data.data);
-  } catch (err) {
-    console.error(
-      err.response?.data?.message || 'Failed to fetch branches'
-    );
-  }
-};
+      setBranches(data.data);
+    } catch (err) {
+      console.error(err.response?.data?.message || "Failed to fetch branches");
+    }
+  };
 
   useEffect(() => {
     fetchEmployees();
@@ -88,15 +86,13 @@ const fetchBranches = async () => {
           emp.firstName?.toLowerCase().includes(query) ||
           emp.lastName?.toLowerCase().includes(query) ||
           emp.email?.toLowerCase().includes(query) ||
-          `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(query)
+          `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(query),
       );
     }
 
     // Branch filter
     if (selectedBranch) {
-      filtered = filtered.filter(
-        (emp) => emp.branch?._id === selectedBranch
-      );
+      filtered = filtered.filter((emp) => emp.branch?._id === selectedBranch);
     }
 
     // Role filter
@@ -105,8 +101,8 @@ const fetchBranches = async () => {
     }
 
     // Status filter
-    if (selectedStatus !== '') {
-      const isActive = selectedStatus === 'active';
+    if (selectedStatus !== "") {
+      const isActive = selectedStatus === "active";
       filtered = filtered.filter((emp) => emp.isActive === isActive);
     }
 
@@ -141,51 +137,51 @@ const fetchBranches = async () => {
 
   const columns = [
     {
-      field: 'employeeId',
-      headerName: 'Employee ID',
+      field: "employeeId",
+      headerName: "Employee ID",
       width: 130,
       flex: 0.6,
     },
     {
-      field: 'firstName',
-      headerName: 'First Name',
+      field: "firstName",
+      headerName: "First Name",
       width: 150,
       flex: 0.8,
     },
     {
-      field: 'lastName',
-      headerName: 'Last Name',
+      field: "lastName",
+      headerName: "Last Name",
       width: 150,
       flex: 0.8,
     },
     {
-      field: 'email',
-      headerName: 'Email',
+      field: "email",
+      headerName: "Email",
       width: 200,
       flex: 1.2,
     },
     {
-      field: 'branch',
-      headerName: 'Branch',
+      field: "branch",
+      headerName: "Branch",
       width: 180,
       flex: 1,
       renderCell: (params) => {
         const branch = params.row.branch;
         return branch
           ? `${branch.branchCode} - ${branch.branchName}`
-          : 'Not Assigned';
+          : "Not Assigned";
       },
     },
     {
-      field: 'department',
-      headerName: 'Department',
+      field: "department",
+      headerName: "Department",
       width: 150,
       flex: 0.8,
-      renderCell: (params) => params.value || 'N/A',
+      renderCell: (params) => params.value || "N/A",
     },
     {
-      field: 'role',
-      headerName: 'Role',
+      field: "role",
+      headerName: "Role",
       width: 120,
       flex: 0.6,
       renderCell: (params) => (
@@ -194,9 +190,9 @@ const fetchBranches = async () => {
             px: 1.5,
             py: 0.5,
             borderRadius: 1,
-            color: 'primary.dark',
-            fontWeight: 'medium',
-            textTransform: 'capitalize',
+            color: "primary.dark",
+            fontWeight: "medium",
+            textTransform: "capitalize",
           }}
         >
           {params.value}
@@ -204,15 +200,15 @@ const fetchBranches = async () => {
       ),
     },
     {
-      field: 'phone',
-      headerName: 'Phone',
+      field: "phone",
+      headerName: "Phone",
       width: 150,
       flex: 0.8,
-      renderCell: (params) => params.value || 'N/A',
+      renderCell: (params) => params.value || "N/A",
     },
     {
-      field: 'isActive',
-      headerName: 'Status',
+      field: "isActive",
+      headerName: "Status",
       width: 120,
       flex: 0.5,
       renderCell: (params) => (
@@ -221,18 +217,18 @@ const fetchBranches = async () => {
             px: 2,
             py: 0.5,
             borderRadius: 1,
-            color: params.value ? 'success.dark' : 'error.dark',
-            fontWeight: 'medium',
+            color: params.value ? "success.dark" : "error.dark",
+            fontWeight: "medium",
           }}
         >
-          {params.value ? 'Active' : 'Inactive'}
+          {params.value ? "Active" : "Inactive"}
         </Box>
       ),
     },
   ];
 
   return (
-    <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1700px' } }}>
+    <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Employees
       </Typography>
@@ -243,15 +239,15 @@ const fetchBranches = async () => {
         </Alert>
       )}
 
-      <Paper sx={{ width: '100%', mb: 2 }}>
+      <Paper sx={{ width: "100%", mb: 2 }}>
         <Box sx={{ p: 2 }}>
           {/* Search, Filters, and Action Buttons - All in one row */}
           <Box
             sx={{
-              display: 'flex',
+              display: "flex",
               gap: 2,
-              flexWrap: 'wrap',
-              alignItems: 'center',
+              flexWrap: "wrap",
+              alignItems: "center",
               mb: 2,
             }}
           >
@@ -319,7 +315,7 @@ const fetchBranches = async () => {
             </TextField>
 
             {/* Action Buttons - Push to the right */}
-            <Box sx={{ marginLeft: 'auto', display: 'flex', gap: 1 }}>
+            <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
@@ -341,9 +337,9 @@ const fetchBranches = async () => {
         {loading ? (
           <Box
             sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
               minHeight: 400,
             }}
           >
@@ -363,8 +359,8 @@ const fetchBranches = async () => {
             disableRowSelectionOnClick
             sx={{
               border: 0,
-              '& .MuiDataGrid-cell:hover': {
-                cursor: 'pointer',
+              "& .MuiDataGrid-cell:hover": {
+                cursor: "pointer",
               },
             }}
             autoHeight

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -6,39 +6,39 @@ import {
   Paper,
   Alert,
   CircularProgress,
-} from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-import AddIcon from '@mui/icons-material/Add';
-import AddBranchModal from '../../components/modals/AddBranchModal';
-// import API_URL from '../../config/api';
-import api from '../../utils/api';
+} from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import AddIcon from "@mui/icons-material/Add";
+import AddBranchModal from "../../components/modals/AddBranchModal";
+// import api from '../../utils/api';
+import api from "../../utils/api";
 
 const Branches = () => {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [openModal, setOpenModal] = useState(false);
 
-const fetchBranches = async () => {
-  setLoading(true);
-  setError('');
+  const fetchBranches = async () => {
+    setLoading(true);
+    setError("");
 
-  try {
-    const response = await api.get('/api/branches');
-    const { data } = response;
+    try {
+      const response = await api.get("/api/branches");
+      const { data } = response;
 
-    setBranches(data.data);
-  } catch (err) {
-    const errorMessage =
-      err.response?.data?.message ||
-      err.message ||
-      'An error occurred while fetching branches';
+      setBranches(data.data);
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while fetching branches";
 
-    setError(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchBranches();
@@ -59,59 +59,59 @@ const fetchBranches = async () => {
 
   const columns = [
     {
-      field: 'sl',
-      headerName: 'SL',
+      field: "sl",
+      headerName: "SL",
       width: 70,
       flex: 0.3,
       renderCell: (params) => params.api.getAllRowIds().indexOf(params.id) + 1,
     },
     {
-      field: 'branchCode',
-      headerName: 'Branch Code',
+      field: "branchCode",
+      headerName: "Branch Code",
       width: 150,
       flex: 0.5,
     },
     {
-      field: 'branchName',
-      headerName: 'Branch Name',
+      field: "branchName",
+      headerName: "Branch Name",
       width: 200,
       flex: 1,
     },
     {
-      field: 'location',
-      headerName: 'Location',
+      field: "location",
+      headerName: "Location",
       width: 180,
       flex: 1,
     },
     {
-      field: 'manager',
-      headerName: 'Manager',
+      field: "manager",
+      headerName: "Manager",
       width: 180,
       flex: 1,
       renderCell: (params) => {
         const manager = params.row.manager;
         return manager
           ? `${manager.firstName} ${manager.lastName} (${manager.employeeId})`
-          : 'Not Assigned';
+          : "Not Assigned";
       },
     },
     {
-      field: 'contactInfo.phone',
-      headerName: 'Phone',
+      field: "contactInfo.phone",
+      headerName: "Phone",
       width: 150,
       flex: 0.8,
-      renderCell: (params) => params.row.contactInfo?.phone || 'N/A',
+      renderCell: (params) => params.row.contactInfo?.phone || "N/A",
     },
     {
-      field: 'contactInfo.email',
-      headerName: 'Email',
+      field: "contactInfo.email",
+      headerName: "Email",
       width: 200,
       flex: 1,
-      renderCell: (params) => params.row.contactInfo?.email || 'N/A',
+      renderCell: (params) => params.row.contactInfo?.email || "N/A",
     },
     {
-      field: 'isActive',
-      headerName: 'Status',
+      field: "isActive",
+      headerName: "Status",
       width: 120,
       flex: 0.5,
       renderCell: (params) => (
@@ -120,18 +120,18 @@ const fetchBranches = async () => {
             px: 2,
             py: 0.5,
             borderRadius: 1,
-            color: params.value ? 'success.dark' : 'error.dark',
-            fontWeight: 'medium',
+            color: params.value ? "success.dark" : "error.dark",
+            fontWeight: "medium",
           }}
         >
-          {params.value ? 'Active' : 'Inactive'}
+          {params.value ? "Active" : "Inactive"}
         </Box>
       ),
     },
   ];
 
   return (
-    <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1700px' } }}>
+    <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
         Branches
       </Typography>
@@ -142,7 +142,7 @@ const fetchBranches = async () => {
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -152,14 +152,13 @@ const fetchBranches = async () => {
         </Button>
       </Box>
 
-      <Paper sx={{ width: '100%', mb: 2 }}>
-
+      <Paper sx={{ width: "100%", mb: 2 }}>
         {loading ? (
           <Box
             sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
               minHeight: 400,
             }}
           >
@@ -179,8 +178,8 @@ const fetchBranches = async () => {
             disableRowSelectionOnClick
             sx={{
               border: 0,
-              '& .MuiDataGrid-cell:hover': {
-                cursor: 'pointer',
+              "& .MuiDataGrid-cell:hover": {
+                cursor: "pointer",
               },
             }}
             autoHeight

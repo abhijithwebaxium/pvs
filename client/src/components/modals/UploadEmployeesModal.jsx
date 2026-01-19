@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import * as XLSX from "xlsx";
-import API_URL from "../../config/api";
+import api from "../../utils/api";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -38,19 +38,8 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
   const fetchBranches = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/branches?isActive=true`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setBranches(data.data);
-      }
+      const response = await api.get("/api/branches?isActive=true");
+      setBranches(response.data.data);
     } catch (err) {
       // Error fetching branches
     }
@@ -213,7 +202,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             "Employee Name",
             " Employee Name ",
             "employeeName",
-            "EmployeeName"
+            "EmployeeName",
           ) || "";
         const { firstName, lastName } = parseEmployeeName(employeeName);
 
@@ -223,7 +212,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             "Employee Number",
             " Employee Number ",
             "employeeNumber",
-            "EmployeeNumber"
+            "EmployeeNumber",
           ) || "";
         const workEmail =
           getColumnValue(
@@ -231,7 +220,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             "Work Email",
             " Work Email ",
             "workEmail",
-            "WorkEmail"
+            "WorkEmail",
           ) || "";
 
         // Try multiple variations of the hourly pay rate column name
@@ -245,7 +234,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             "hourlyPayRate",
             "HourlyPayRate",
             "Hourly Rate",
-            "hourly rate"
+            "hourly rate",
           ) || 0;
 
         const parsedHourlyRate = parseNumber(rawHourlyRate);
@@ -263,7 +252,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Company Code",
               " Company Code ",
               "companyCode",
-              "CompanyCode"
+              "CompanyCode",
             ) || "",
           supervisorName:
             getColumnValue(
@@ -271,7 +260,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Supervisor Name",
               " Supervisor Name ",
               "supervisorName",
-              "SupervisorName"
+              "SupervisorName",
             ) || "",
           location:
             getColumnValue(row, "Location", " Location ", "location") || "",
@@ -282,7 +271,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Job Title",
               " Job Title ",
               "jobTitle",
-              "JobTitle"
+              "JobTitle",
             ) || "",
           employeeType:
             getColumnValue(
@@ -290,7 +279,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Employee Type",
               " Employee Type ",
               "employeeType",
-              "EmployeeType"
+              "EmployeeType",
             ) || "",
           salaryType:
             getColumnValue(
@@ -298,7 +287,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Salary or Hourly",
               " Salary or Hourly ",
               "salaryType",
-              "SalaryType"
+              "SalaryType",
             ) || null,
           annualSalary: parseNumber(
             getColumnValue(
@@ -306,15 +295,15 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Annual Salary",
               " Annual Salary ",
               "annualSalary",
-              "AnnualSalary"
-            ) || 0
+              "AnnualSalary",
+            ) || 0,
           ),
           hourlyPayRate: parsedHourlyRate,
           bonus2024: parseNumber(
-            getColumnValue(row, "2024 Bonus", " 2024 Bonus ", "bonus2024") || 0
+            getColumnValue(row, "2024 Bonus", " 2024 Bonus ", "bonus2024") || 0,
           ),
           bonus2025: parseNumber(
-            getColumnValue(row, "2025 Bonus", " 2025 Bonus ", "bonus2025") || 0
+            getColumnValue(row, "2025 Bonus", " 2025 Bonus ", "bonus2025") || 0,
           ),
           lastHireDate: parseDate(
             getColumnValue(
@@ -322,8 +311,8 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "Last Hire Date",
               " Last Hire Date ",
               "lastHireDate",
-              "LastHireDate"
-            )
+              "LastHireDate",
+            ),
           ),
 
           // Parse Role
@@ -354,7 +343,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
                 "State/Province",
                 " State/Province ",
                 "state",
-                "State"
+                "State",
               ) || "",
             street: "",
             city: "",
@@ -368,7 +357,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "1st Reporting",
               " 1st Reporting ",
               "reporting1st",
-              "1stReporting"
+              "1stReporting",
             ) || "",
           reporting2nd:
             getColumnValue(
@@ -376,7 +365,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "2nd Reporting",
               " 2nd Reporting ",
               "reporting2nd",
-              "2ndReporting"
+              "2ndReporting",
             ) || "",
           reporting3rd:
             getColumnValue(
@@ -384,7 +373,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "3rd Reporting",
               " 3rd Reporting ",
               "reporting3rd",
-              "3rdReporting"
+              "3rdReporting",
             ) || "",
           reporting4th:
             getColumnValue(
@@ -392,7 +381,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "4th Reporting",
               " 4th Reporting ",
               "reporting4th",
-              "4thReporting"
+              "4thReporting",
             ) || "",
           reporting5th:
             getColumnValue(
@@ -400,7 +389,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               "5th Reporting",
               " 5th Reporting ",
               "reporting5th",
-              "5thReporting"
+              "5thReporting",
             ) || "",
         };
 
@@ -433,20 +422,16 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       setUploadProgress(50);
 
       // Send data to API
-      const response = await fetch(`${API_URL}/api/employees/bulk`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ employees: uniqueEmployees }),
+      const response = await api.post("/api/employees/bulk", {
+        employees: uniqueEmployees,
       });
 
       setUploadProgress(80);
 
-      const data = await response.json();
+      const { data } = response;
 
-      // Handle partial success (207 Multi-Status)
+      // Handle partial success (207 Multi-Status) or 200/201
+      // Axios doesn't throw on 207, so we check data/status
       if (response.status === 207) {
         setUploadProgress(100);
 
@@ -465,7 +450,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               (dup) =>
                 `  • ${dup.employeeName || "Unknown"} (${dup.employeeId}) - ${
                   dup.reason
-                }`
+                }`,
             )
             .join("\n");
           const moreMsg =
@@ -481,7 +466,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             : "";
 
         setSuccessMessage(
-          `${data.message}${duplicateInfo}${excelDuplicatesInfo}`
+          `${data.message}${duplicateInfo}${excelDuplicatesInfo}`,
         );
 
         // Reset form after a short delay
@@ -492,25 +477,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           onEmployeesUploaded();
         }, 2500);
         return;
-      }
-
-      if (!response.ok) {
-        // Show detailed validation errors if available
-        if (data.errors && Array.isArray(data.errors)) {
-          const errorDetails = data.errors
-            .slice(0, 5)
-            .map(
-              (err) =>
-                `Row ${err.index}: ${err.employeeName} (${err.employeeId}) - ${err.reason}`
-            )
-            .join("\n");
-          const moreErrors =
-            data.errors.length > 5
-              ? `\n...and ${data.errors.length - 5} more`
-              : "";
-          throw new Error(`${data.message}\n\n${errorDetails}${moreErrors}`);
-        }
-        throw new Error(data.message || "Failed to upload employees");
       }
 
       setUploadProgress(100);
@@ -524,7 +490,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       setSuccessMessage(
         `Successfully uploaded ${
           data.count || uniqueEmployees.length
-        } employees${reportingInfo}!${excelDuplicatesInfo}`
+        } employees${reportingInfo}!${excelDuplicatesInfo}`,
       );
 
       // Reset form after a short delay

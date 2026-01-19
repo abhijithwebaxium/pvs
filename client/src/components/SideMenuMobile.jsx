@@ -16,7 +16,7 @@ import CardAlert from "./CardAlert";
 import { selectUser } from "../store/slices/userSlice";
 import logo from "../assets/logo.png";
 import logoBlack from "../assets/logo_black.png";
-import API_URL from "../config/api";
+import api from "../utils/api";
 
 function SideMenuMobile({ open, toggleDrawer }) {
   const navigate = useNavigate();
@@ -24,12 +24,12 @@ function SideMenuMobile({ open, toggleDrawer }) {
   const user = useSelector(selectUser);
 
   // Determine the actual mode being used (system preference or user selection)
-  const resolvedMode = (mode === 'system' ? systemMode : mode) || 'light';
+  const resolvedMode = (mode === "system" ? systemMode : mode) || "light";
 
   // Determine which logo to use based on resolved theme mode
   // Use logo.png (white/light logo) for dark mode
   // Use logoBlack.png (dark logo) for light mode
-  const currentLogo = resolvedMode === 'dark' ? logo : logoBlack;
+  const currentLogo = resolvedMode === "dark" ? logo : logoBlack;
 
   // Get user initials for avatar
   const getInitials = (firstName, lastName) => {
@@ -43,23 +43,20 @@ function SideMenuMobile({ open, toggleDrawer }) {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${API_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await api.post("/api/auth/logout");
 
       // Clear local storage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
       // Redirect to login page
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Still logout and redirect even if API call fails
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      navigate('/login');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
     }
   };
 
@@ -82,7 +79,10 @@ function SideMenuMobile({ open, toggleDrawer }) {
           height: "100%",
         }}
       >
-        <Stack direction="row" sx={{ p: 2, pb: 0, gap: 1, alignItems: "center" }}>
+        <Stack
+          direction="row"
+          sx={{ p: 2, pb: 0, gap: 1, alignItems: "center" }}
+        >
           <img
             src={currentLogo}
             alt="Logo"
