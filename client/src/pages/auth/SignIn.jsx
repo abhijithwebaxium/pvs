@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -10,22 +10,26 @@ import {
   Alert,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { loginStart, loginSuccess, loginFailure } from '../../store/slices/userSlice';
-import API_URL from '../../config/api';
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+} from "../../store/slices/userSlice";
+import API_URL from "../../config/api";
 
 const SignIn = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -33,15 +37,15 @@ const SignIn = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!formData.email || !formData.password) {
-      setError('Please provide email and password');
+      setError("Please provide email and password");
       return;
     }
 
@@ -50,11 +54,11 @@ const SignIn = () => {
 
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -64,21 +68,23 @@ const SignIn = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || "Login failed");
       }
 
       // Dispatch login success with user data
       if (data.data?.user) {
-        dispatch(loginSuccess({
-          ...data.data.user,
-          token: data.data.token,
-        }));
+        dispatch(
+          loginSuccess({
+            ...data.data.user,
+            token: data.data.token,
+          }),
+        );
       }
 
       // Redirect to home page
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      const errorMessage = err.message || 'An error occurred during login';
+      const errorMessage = err.message || "An error occurred during login";
       setError(errorMessage);
       dispatch(loginFailure(errorMessage));
     } finally {
@@ -90,10 +96,10 @@ const SignIn = () => {
     <Container component="main" maxWidth="xs">
       <Box
         sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
           py: 4,
         }}
       >
@@ -101,9 +107,9 @@ const SignIn = () => {
           elevation={3}
           sx={{
             p: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
           <Typography component="h1" variant="h4" gutterBottom>
@@ -114,12 +120,12 @@ const SignIn = () => {
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
             <TextField
               margin="normal"
               required
@@ -140,7 +146,7 @@ const SignIn = () => {
               fullWidth
               name="password"
               label="Password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               id="password"
               autoComplete="current-password"
               value={formData.password}
@@ -167,17 +173,17 @@ const SignIn = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
-            <Box sx={{ textAlign: 'center' }}>
+            <Box sx={{ textAlign: "center" }}>
               <Link
                 href="/signup"
                 variant="body2"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate('/signup');
+                  navigate("/signup");
                 }}
-                sx={{ cursor: 'pointer' }}
+                sx={{ cursor: "pointer" }}
               >
                 Don't have an account? Sign Up
               </Link>

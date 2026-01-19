@@ -3,12 +3,10 @@ import Employee from "../models/Employee.js";
 import AppError from "../utils/appError.js";
 
 // Protect routes - verify JWT token
-// Protect routes - verify JWT token
 export const protect = async (req, res, next) => {
   try {
-    let token;
+    let token = null;
 
-    // Check for token in cookie or Authorization header
     if (req.cookies.token) {
       token = req.cookies.token;
     } else if (
@@ -19,44 +17,65 @@ export const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      // Allow request to proceed without user (optional auth)
+      req.user = { isAuthenticated: false };
+      return next(); // Continue without blocking
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded?.userId;
+
+    // Check if user still exists
+    const user = await Employee.findById(userId).select("-password");
+    if (!user || !user.isActive) {
+      req.user = { isAuthenticated: false };
       return next();
     }
 
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Add user data to request
+    req.user = {
+      userId: userId,
+      employeeId: user.employeeId,
+      role: user.role,
+      isAuthenticated: true,
+    };
 
-      // Check if user still exists
-      const user = await Employee.findById(decoded.userId).select("-password");
-      if (!user || !user.isActive) {
-        // Token exists but user invalid -> proceed as unauthenticated
-        return next();
-      }
+    next();
+  } catch (err) {
+    return next(err);
+  }
+};
 
-      // Add user data to request
-      req.user = {
-        userId: decoded.userId,
-        employeeId: user.employeeId,
-        role: user.role,
-      };
-
-      next();
-    } catch (err) {
-      // Token invalid -> proceed as unauthenticated
+export const authenticate = (req, res, next) => {
+  try {
+    if (req?.user?.isAuthenticated) {
       return next();
     }
-  } catch (error) {
-    next(error);
+
+    throw new AppError("Authentication required", 401);
+  } catch (err) {
+    next(err);
   }
 };
 
 // Role-based authorization - REMOVED
 // All authenticated users can access all routes
-export const authorize = (...roles) => {
+export const authorize = (requiredRoles) => {
   return (req, res, next) => {
-    // No role checking - just pass through
-    next();
+    try {
+      console.log(req.user);
+
+      if (!req?.user?.isAuthenticated) {
+        throw new AppError("Authentication required", 401);
+      }
+
+      if (requiredRoles.includes(req.user.role)) {
+        return next();
+      }
+
+      throw new AppError("Forbidden: Insufficient permissions", 403);
+    } catch (err) {
+      next(err);
+    }
   };
 };
 

@@ -20,10 +20,30 @@ import { selectUser } from "../store/slices/userSlice";
 // Define menu items - NO ROLE RESTRICTIONS
 const menuItems = [
   { text: "Home", icon: <HomeRoundedIcon />, path: "/" },
-  { text: "Branches", icon: <BusinessRoundedIcon />, path: "/branches" },
-  { text: "Employees", icon: <PeopleRoundedIcon />, path: "/employees" },
-  { text: "Approvals", icon: <CheckCircleOutlineIcon />, path: "/approvals" },
-  { text: "Bonuses", icon: <AttachMoneyIcon />, path: "/bonuses" },
+  {
+    text: "Branches",
+    icon: <BusinessRoundedIcon />,
+    path: "/branches",
+    roles: ["admin", "hr"],
+  },
+  {
+    text: "Employees",
+    icon: <PeopleRoundedIcon />,
+    path: "/employees",
+    roles: ["admin", "hr"],
+  },
+  {
+    text: "Approvals",
+    icon: <CheckCircleOutlineIcon />,
+    path: "/approvals",
+    roles: ["admin", "manager", "approver"],
+  },
+  {
+    text: "Bonuses",
+    icon: <AttachMoneyIcon />,
+    path: "/bonuses",
+    roles: ["admin", "manager"],
+  },
 ];
 
 const secondaryListItems = [
@@ -43,8 +63,9 @@ export default function MenuContent() {
     }
   };
 
-  // No role filtering - show all menu items to all authenticated users
-  const visibleMenuItems = menuItems;
+  const visibleMenuItems = menuItems?.filter((item) =>
+    item.roles ? item.roles.includes(user.role) : true,
+  );
 
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>
