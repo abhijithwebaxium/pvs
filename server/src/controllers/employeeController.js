@@ -1044,7 +1044,7 @@ export const getMySupervisedEmployees = async (req, res, next) => {
       isActive: true,
       _id: { $ne: supervisorId },
     })
-      .select("-password +approvalStatus")
+      .select("-password")
       .populate("branch", "branchCode branchName location")
       .populate("level1Approver", "firstName lastName employeeId")
       .populate("level2Approver", "firstName lastName employeeId")
