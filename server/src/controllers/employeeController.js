@@ -901,7 +901,7 @@ export const getMyApprovals = async (req, res, next) => {
     if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
-
+    console.log(approverId, "approverId");
     // Helper to get common populates
     const commonPopulates = [
       { path: "branch", select: "branchCode branchName location" },
