@@ -16,6 +16,9 @@ export const protect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
     }
 
+    console.log(req.cookies.token, "Token from cookie");
+    console.log(req.headers.authorization, "Token from header");
+
     if (!token) {
       req.user = { isAuthenticated: false };
       return next(); // Continue without blocking
