@@ -129,7 +129,7 @@ const Bonuses = () => {
     const levels = ["level1", "level2", "level3", "level4", "level5"];
     const hasActiveProcess = levels.some((lvl) => {
       const status = employee.approvalStatus?.[lvl]?.status;
-      return status && !["not_required", "unknown"].includes(status);
+      return status && !["pending", "unknown"].includes(status);
     });
 
     if (!hasMetadata && !hasBonusValue && !hasActiveProcess) {
