@@ -82,7 +82,7 @@ const Approvals = () => {
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch approvals");
       }
-
+      console.log(data, "data");
       setApprovalsData(data.data);
       setCounts(data.counts);
     } catch (err) {

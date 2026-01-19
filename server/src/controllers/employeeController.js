@@ -901,7 +901,7 @@ export const getMyApprovals = async (req, res, next) => {
     if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
-
+    console.log(approverId, "approverId");
     // Helper to get common populates
     const commonPopulates = [
       { path: "branch", select: "branchCode branchName location" },
@@ -1000,6 +1000,23 @@ export const getMyApprovals = async (req, res, next) => {
       .select("-password")
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
+
+    console.log({
+      data: {
+        level1: level1Employees,
+        level2: level2Employees,
+        level3: level3Employees,
+        level4: level4Employees,
+        level5: level5Employees,
+      },
+      counts: {
+        level1: level1Employees.length,
+        level2: level2Employees.length,
+        level3: level3Employees.length,
+        level4: level4Employees.length,
+        level5: level5Employees.length,
+      },
+    });
 
     res.status(200).json({
       success: true,
