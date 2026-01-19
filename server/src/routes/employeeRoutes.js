@@ -97,6 +97,6 @@ router.patch(
 );
 
 // Bonus update route - HR and Admin only
-router.put("/:id/bonus", authorize(["hr", "admin"]), updateEmployeeBonus);
+router.put("/:id/bonus", authorize(["hr", "admin", "approver"]), updateEmployeeBonus);
 
 export default router;
