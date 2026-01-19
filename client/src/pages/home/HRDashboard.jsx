@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Grid,
   Card,
@@ -6,25 +7,136 @@ import {
   Box,
   CircularProgress,
   Alert,
+  Paper,
 } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 import PeopleIcon from "@mui/icons-material/People";
 import BusinessIcon from "@mui/icons-material/Business";
 import useDashboardStats from "../../hooks/useDashboardStats";
+import API_URL from "../../config/api";
 
 const HRDashboard = ({ user }) => {
-  const { staffCount, branchCount, loading, error } = useDashboardStats();
+  const {
+    staffCount,
+    branchCount,
+    loading: statsLoading,
+    error: statsError,
+  } = useDashboardStats();
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (error) {
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/api/employees`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch employees");
+        }
+
+        setEmployees(data.data);
+      } catch (err) {
+        setError(err.message || "An error occurred while fetching employees");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  const columns = [
+    {
+      field: "slNo",
+      headerName: "SL. No",
+      width: 70,
+      renderCell: (params) => {
+        const rows = params.api.getAllRowIds();
+        return rows.indexOf(params.id) + 1;
+      },
+    },
+    {
+      field: "employeeId",
+      headerName: "Employee ID",
+      width: 120,
+    },
+    {
+      field: "fullName",
+      headerName: "Name",
+      width: 220,
+      valueGetter: (params, row) =>
+        `${row.firstName || ""} ${row.lastName || ""}`,
+    },
+    {
+      field: "bonus2024",
+      headerName: "2024 Bonus",
+      width: 130,
+      renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
+    },
+    {
+      field: "bonus2025",
+      headerName: "2025 Bonus",
+      width: 130,
+      renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
+    },
+    {
+      field: "level1ApproverName",
+      headerName: "Approver 1",
+      width: 160,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+    {
+      field: "level2ApproverName",
+      headerName: "Approver 2",
+      width: 160,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+    {
+      field: "level3ApproverName",
+      headerName: "Approver 3",
+      width: 160,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+    {
+      field: "level4ApproverName",
+      headerName: "Approver 4",
+      width: 160,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+    {
+      field: "level5ApproverName",
+      headerName: "Approver 5",
+      width: 160,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+  ];
+
+  if (statsError || error) {
     return (
       <Box sx={{ mb: 4 }}>
-        <Alert severity="error">Failed to load dashboard data: {error}</Alert>
+        <Alert severity="error">
+          Failed to load dashboard data: {statsError || error}
+        </Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Grid container spacing={3}>
+    <Box sx={{ pb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={6}>
           <Card
             variant="outlined"
@@ -64,7 +176,7 @@ const HRDashboard = ({ user }) => {
                     Total Employees
                   </Typography>
                   <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
-                    {loading ? <CircularProgress size={30} /> : staffCount}
+                    {statsLoading ? <CircularProgress size={30} /> : staffCount}
                   </Typography>
                 </Box>
                 <Box
@@ -133,7 +245,11 @@ const HRDashboard = ({ user }) => {
                     Branches
                   </Typography>
                   <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
-                    {loading ? <CircularProgress size={30} /> : branchCount}
+                    {statsLoading ? (
+                      <CircularProgress size={30} />
+                    ) : (
+                      branchCount
+                    )}
                   </Typography>
                 </Box>
                 <Box
@@ -163,6 +279,48 @@ const HRDashboard = ({ user }) => {
           </Card>
         </Grid>
       </Grid>
+
+      <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
+        Employees
+      </Typography>
+      <Paper
+        sx={{
+          width: "100%",
+          borderRadius: "16px",
+          overflow: "hidden",
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Box sx={{ height: 600, width: "100%" }}>
+          <DataGrid
+            rows={employees}
+            columns={columns}
+            getRowId={(row) => row._id}
+            loading={loading}
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10, page: 0 },
+              },
+            }}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+            sx={{
+              border: 0,
+              "& .MuiDataGrid-columnHeaders": {
+                backgroundColor: "background.paper",
+                borderBottom: "2px solid",
+                borderColor: "divider",
+              },
+              "& .MuiDataGrid-cell": {
+                borderBottom: "1px solid",
+                borderColor: "divider",
+              },
+            }}
+          />
+        </Box>
+      </Paper>
     </Box>
   );
 };

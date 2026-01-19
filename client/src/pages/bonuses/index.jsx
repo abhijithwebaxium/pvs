@@ -231,16 +231,12 @@ const Bonuses = () => {
       flex: 0.6,
     },
     {
-      field: "firstName",
-      headerName: "First Name",
-      width: 150,
-      flex: 0.8,
-    },
-    {
-      field: "lastName",
-      headerName: "Last Name",
-      width: 150,
-      flex: 0.8,
+      field: "name",
+      headerName: "Name",
+      width: 250,
+      flex: 1.2,
+      valueGetter: (params, row) =>
+        `${row.firstName || ""} ${row.lastName || ""}`.trim(),
     },
     {
       field: "jobTitle",
@@ -359,9 +355,36 @@ const Bonuses = () => {
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
-      <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Assign Employee Bonuses
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography component="h2" variant="h6">
+          Assign Employee Bonuses
+        </Typography>
+
+        <Box sx={{ textAlign: "right", pr: 2,}}>
+          <Typography
+            variant="caption"
+            sx={{ color: "text.secondary", fontWeight: "medium" }}
+          >
+            TOTAL BONUS (2025)
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "bold", color: "primary.main" }}
+          >
+            $
+            {employees
+              .reduce((sum, emp) => sum + (parseFloat(emp.bonus2025) || 0), 0)
+              .toLocaleString()}
+          </Typography>
+        </Box>
+      </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         As a supervisor, you can enter and update bonus amounts for employees
@@ -457,7 +480,11 @@ const Bonuses = () => {
                   {bonusDialog.employee.jobTitle || "N/A"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Current Bonus:</strong> $
+                  <strong>2024 Bonus:</strong> $
+                  {(bonusDialog.employee.bonus2024 || 0).toLocaleString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>2025 Bonus:</strong> $
                   {(bonusDialog.employee.bonus2025 || 0).toLocaleString()}
                 </Typography>
               </Box>

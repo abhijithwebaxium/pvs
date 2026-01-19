@@ -25,6 +25,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import InfoIcon from "@mui/icons-material/Info";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/userSlice";
 import API_URL from "../../config/api";
@@ -269,7 +270,7 @@ const Approvals = () => {
       pending: "Pending",
       approved: "Approved",
       rejected: "Rejected",
-      not_required: "N/A",
+      not_required: "Not Approved",
     };
 
     return (
@@ -282,8 +283,8 @@ const Approvals = () => {
   };
 
   const getApproverInfo = (approver) => {
-    if (!approver) return "Not Assigned";
-    return `${approver.firstName} ${approver.lastName} (${approver.employeeId})`;
+    if (!approver || !approver.firstName) return null;
+    return `${approver.firstName} ${approver.lastName || ""} (${approver.employeeId || "N/A"})`;
   };
 
   // Base columns that are common across all levels
@@ -295,16 +296,12 @@ const Approvals = () => {
       flex: 0.6,
     },
     {
-      field: "firstName",
-      headerName: "First Name",
-      width: 150,
-      flex: 0.8,
-    },
-    {
-      field: "lastName",
-      headerName: "Last Name",
-      width: 150,
-      flex: 0.8,
+      field: "name",
+      headerName: "Name",
+      width: 250,
+      flex: 1.2,
+      valueGetter: (params, row) =>
+        `${row.firstName || ""} ${row.lastName || ""}`.trim(),
     },
     {
       field: "bonus2024",
@@ -364,7 +361,8 @@ const Approvals = () => {
       headerName: "Level 1 Approver",
       width: 200,
       flex: 1,
-      renderCell: (params) => getApproverInfo(params.row.level1Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level1Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level1.status",
@@ -398,7 +396,8 @@ const Approvals = () => {
       headerName: "Level 1 Approver",
       width: 200,
       flex: 0.9,
-      renderCell: (params) => getApproverInfo(params.row.level1Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level1Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level1.status",
@@ -416,7 +415,8 @@ const Approvals = () => {
       headerName: "Level 2 Approver",
       width: 200,
       flex: 0.9,
-      renderCell: (params) => getApproverInfo(params.row.level2Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level2Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level2.status",
@@ -468,7 +468,8 @@ const Approvals = () => {
       headerName: "L2 Approver",
       width: 180,
       flex: 0.8,
-      renderCell: (params) => getApproverInfo(params.row.level2Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level2Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level2.status",
@@ -486,7 +487,8 @@ const Approvals = () => {
       headerName: "L3 Approver",
       width: 180,
       flex: 0.8,
-      renderCell: (params) => getApproverInfo(params.row.level3Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level3Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level3.status",
@@ -520,7 +522,8 @@ const Approvals = () => {
       headerName: "L1 Approver",
       width: 170,
       flex: 0.7,
-      renderCell: (params) => getApproverInfo(params.row.level1Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level1Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level1.status",
@@ -538,7 +541,8 @@ const Approvals = () => {
       headerName: "L2 Approver",
       width: 170,
       flex: 0.7,
-      renderCell: (params) => getApproverInfo(params.row.level2Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level2Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level2.status",
@@ -556,7 +560,8 @@ const Approvals = () => {
       headerName: "L3 Approver",
       width: 170,
       flex: 0.7,
-      renderCell: (params) => getApproverInfo(params.row.level3Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level3Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level3.status",
@@ -574,7 +579,8 @@ const Approvals = () => {
       headerName: "L4 Approver",
       width: 170,
       flex: 0.7,
-      renderCell: (params) => getApproverInfo(params.row.level4Approver),
+      renderCell: (params) =>
+        getApproverInfo(params.row.level4Approver) || "Not Assigned",
     },
     {
       field: "approvalStatus.level4.status",
@@ -606,15 +612,122 @@ const Approvals = () => {
     {
       field: "approverLevel",
       headerName: "Approver Level",
-      width: 130,
-      flex: 0.6,
+      width: 170,
+      flex: 0.8,
       renderCell: (params) => {
+        const currentLevel = params.row.currentPendingLevel;
+
+        // Build tooltip content for all assigned levels
+        const history = [];
+        for (let i = 1; i <= 5; i++) {
+          if (
+            params.row[`level${i}Approver`] ||
+            params.row[`level${i}ApproverName`]
+          ) {
+            const status =
+              params.row.approvalStatus?.[`level${i}`]?.status || "pending";
+            const approver = params.row[`level${i}Approver`];
+            const approverName =
+              approver && approver.firstName
+                ? `${approver.lastName || ""}, ${approver.firstName} (${approver.employeeId || "N/A"})`
+                : params.row[`level${i}ApproverName`] || "Assigned";
+            history.push({
+              level: i,
+              status,
+              approverName,
+              isCurrent: i === currentLevel,
+            });
+          }
+        }
+
+        const tooltipContent = (
+          <Box sx={{ p: 1 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                mb: 1,
+                fontWeight: "bold",
+                borderBottom: "1px solid rgba(255,255,255,0.2)",
+                pb: 0.5,
+              }}
+            >
+              Approval History
+            </Typography>
+            {history.length === 0 ? (
+              <Typography variant="caption">Initial approval level</Typography>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {history.map((h) => (
+                  <Box
+                    key={h.level}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      p: h.isCurrent ? 0.5 : 0,
+                      borderRadius: 1,
+                      bgcolor: h.isCurrent
+                        ? "rgba(255,255,255,0.1)"
+                        : "transparent",
+                      border: h.isCurrent
+                        ? "1px solid rgba(255,255,255,0.2)"
+                        : "none",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        minWidth: 50,
+                        fontWeight: h.isCurrent ? "bold" : "normal",
+                      }}
+                    >
+                      Level {h.level}:
+                    </Typography>
+                    <Chip
+                      label={
+                        h.status === "approved"
+                          ? "APPROVED"
+                          : h.status === "rejected"
+                            ? "REJECTED"
+                            : "NOT APPROVED"
+                      }
+                      size="small"
+                      color={
+                        h.status === "approved"
+                          ? "success"
+                          : h.status === "rejected"
+                            ? "error"
+                            : "default"
+                      }
+                      sx={{ height: 20, fontSize: "0.65rem" }}
+                    />
+                    <Typography
+                      variant="caption"
+                      color="inherit"
+                      sx={{ fontStyle: "italic", ml: 0.5 }}
+                    >
+                      by {h.approverName}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        );
+
         return (
-          <Chip
-            label={`Level ${params.row.currentPendingLevel}`}
-            size="small"
-            variant="outlined"
-          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Chip
+              label={`Level ${currentLevel}`}
+              size="small"
+              variant="outlined"
+            />
+            <Tooltip title={tooltipContent} arrow placement="right">
+              <IconButton size="small" color="primary">
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         );
       },
     },
@@ -699,39 +812,96 @@ const Approvals = () => {
     },
   ];
 
+  // Calculate the current pending level for an employee
+  const getPendingLevel = (emp) => {
+    for (let i = 1; i <= 5; i++) {
+      const status = emp.approvalStatus?.[`level${i}`]?.status || "pending";
+      if (status === "pending" && emp[`level${i}Approver`]) {
+        return i;
+      }
+    }
+    return 1;
+  };
+
   // Merge all levels into one array
   const mergedRows = [];
-  Object.keys(approvalsData).forEach((levelKey) => {
-    const level = parseInt(levelKey.replace("level", ""));
-    const employees = approvalsData[levelKey];
-    if (Array.isArray(employees)) {
-      employees.forEach((emp) => {
-        mergedRows.push({
-          ...emp,
-          currentPendingLevel: level,
-          uniqueId: `${emp._id}-${level}`, // Ensure unique ID if somehow an employee is in multiple levels
+  if (
+    approvalsData &&
+    typeof approvalsData === "object" &&
+    !Array.isArray(approvalsData)
+  ) {
+    Object.keys(approvalsData).forEach((levelKey) => {
+      const level = parseInt(levelKey.replace("level", ""));
+      const employees = approvalsData[levelKey];
+      if (Array.isArray(employees)) {
+        employees.forEach((emp) => {
+          mergedRows.push({
+            ...emp,
+            currentPendingLevel: level,
+            uniqueId: `${emp._id}-${level}`,
+          });
         });
-      });
-    }
-  });
-  const totalPending = Object.values(counts).reduce(
-    (sum, count) => sum + count,
-    0,
-  );
-
-  // Calculate total approved count
-  let totalApproved = 0;
-  Object.keys(approvalsData).forEach((levelKey) => {
-    const employees = approvalsData[levelKey];
-    if (Array.isArray(employees)) {
-      employees.forEach((employee) => {
-        const status = employee.approvalStatus?.[levelKey]?.status;
-        if (status === "approved") {
-          totalApproved++;
+      }
+    });
+  } else if (Array.isArray(approvalsData)) {
+    // Fallback if data is already a flat array
+    approvalsData.forEach((emp) => {
+      // Try to determine level from approvalStatus if not provided
+      let level = 1;
+      for (let i = 1; i <= 5; i++) {
+        if (
+          emp.approvalStatus?.[`level${i}`]?.status === "pending" &&
+          emp[`level${i}Approver`]
+        ) {
+          level = i;
+          break;
         }
+      }
+      mergedRows.push({
+        ...emp,
+        currentPendingLevel: level,
+        uniqueId: `${emp._id}-${level}`,
       });
-    }
-  });
+    });
+  }
+
+  // Calculate summary counts
+  let totalPending = 0;
+  let totalApproved = 0;
+
+  if (
+    approvalsData &&
+    typeof approvalsData === "object" &&
+    !Array.isArray(approvalsData)
+  ) {
+    Object.keys(approvalsData).forEach((levelKey) => {
+      const employees = approvalsData[levelKey];
+      if (Array.isArray(employees)) {
+        employees.forEach((employee) => {
+          const status =
+            employee.approvalStatus?.[levelKey]?.status || "pending";
+          if (status === "approved") {
+            totalApproved++;
+          } else if (status === "rejected") {
+            // Not counted in either for now, or could be in total
+          } else {
+            totalPending++;
+          }
+        });
+      }
+    });
+  } else if (Array.isArray(approvalsData)) {
+    mergedRows.forEach((row) => {
+      const status =
+        row.approvalStatus?.[`level${row.currentPendingLevel}`]?.status ||
+        "pending";
+      if (status === "approved") {
+        totalApproved++;
+      } else if (status !== "rejected") {
+        totalPending++;
+      }
+    });
+  }
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>

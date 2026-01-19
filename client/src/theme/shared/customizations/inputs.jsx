@@ -70,6 +70,12 @@ export const inputsCustomizations = {
               "&:active": {
                 backgroundColor: gray[800],
               },
+              "&.Mui-disabled": {
+                color: "#FFFFFF",
+                opacity: 0.6,
+                backgroundColor: gray[600],
+                borderColor: gray[600],
+              },
               ...theme.applyStyles("dark", {
                 color: "black",
                 backgroundColor: gray[50],
@@ -105,6 +111,12 @@ export const inputsCustomizations = {
               "&:active": {
                 backgroundColor: brand[700],
                 backgroundImage: "none",
+              },
+              "&.Mui-disabled": {
+                color: "#FFFFFF",
+                opacity: 0.6,
+                backgroundColor: brand[200],
+                borderColor: brand[200],
               },
             },
           },
@@ -214,6 +226,18 @@ export const inputsCustomizations = {
                   backgroundColor: alpha(brand[900], 0.3),
                 },
               }),
+            },
+          },
+          {
+            props: {
+              variant: "contained",
+            },
+            style: {
+              "&.Mui-disabled": {
+                color: "#FFFFFF",
+                opacity: 0.6,
+                backgroundColor: gray[600],
+              },
             },
           },
         ],
