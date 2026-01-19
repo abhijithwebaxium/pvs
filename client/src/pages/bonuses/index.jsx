@@ -22,7 +22,7 @@ import PendingIcon from "@mui/icons-material/Pending";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/userSlice";
-import API_URL from "../../config/api";
+import api from "../../utils/api";
 
 const Bonuses = () => {
   const user = useSelector(selectUser);
@@ -42,29 +42,17 @@ const Bonuses = () => {
 
     try {
       const userId = user?.id || user?._id;
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        `${API_URL}/api/employees/supervisor/my-team?supervisorId=${userId}`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
+      const response = await api.get(
+        `/api/employees/supervisor/my-team?supervisorId=${userId}`,
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch employees");
-      }
-
-      setEmployees(data.data);
+      setEmployees(response.data.data);
     } catch (err) {
-      setError(err.message || "An error occurred while fetching employees");
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while fetching employees";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -103,34 +91,23 @@ const Bonuses = () => {
 
     try {
       const userId = user?.id || user?._id;
-      const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        `${API_URL}/api/employees/${bonusDialog.employee._id}/bonus?supervisorId=${userId}`,
+      await api.put(
+        `/api/employees/${bonusDialog.employee._id}/bonus?supervisorId=${userId}`,
         {
-          method: "PUT",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            bonus2025: parseFloat(bonusAmount),
-          }),
+          bonus2025: parseFloat(bonusAmount),
         },
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to update bonus");
-      }
 
       // Refresh the employee list
       await fetchMyTeam();
       handleCloseBonusDialog();
     } catch (err) {
-      setError(err.message || "An error occurred while updating bonus");
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while updating bonus";
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

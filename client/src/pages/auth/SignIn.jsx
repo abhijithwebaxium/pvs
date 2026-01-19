@@ -18,7 +18,7 @@ import {
   loginSuccess,
   loginFailure,
 } from "../../store/slices/userSlice";
-import API_URL from "../../config/api";
+import api from "../../utils/api";
 import truckImage from "../../assets/pvs-truck.webp";
 import logo from "../../assets/logo_black.png";
 
@@ -54,34 +54,23 @@ const SignIn = () => {
     dispatch(loginStart());
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const response = await api.post("/api/auth/login", {
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
+      const { data: responseData } = response;
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      if (data.data?.user) {
+      if (responseData.data?.user) {
         dispatch(
           loginSuccess({
-            ...data.data.user,
-            token: data.data.token,
+            ...responseData.data.user,
+            token: responseData.data.token,
           }),
         );
       }
 
-      if (data.data?.user?.role === "approver") {
+      if (responseData.data?.user?.role === "approver") {
         navigate("/approvals");
       } else {
         navigate("/");

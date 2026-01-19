@@ -28,7 +28,7 @@ import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import InfoIcon from "@mui/icons-material/Info";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/userSlice";
-import API_URL from "../../config/api";
+import api from "../../utils/api";
 
 const Approvals = () => {
   const user = useSelector(selectUser);
@@ -63,30 +63,20 @@ const Approvals = () => {
 
     try {
       const userId = user?.id || user?._id;
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        `${API_URL}/api/employees/approvals/my-approvals?approverId=${userId}`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
+      const response = await api.get(
+        `/api/employees/approvals/my-approvals?approverId=${userId}`,
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch approvals");
-      }
+      const { data } = response;
       console.log(data, "data");
       setApprovalsData(data.data);
       setCounts(data.counts);
     } catch (err) {
-      setError(err.message || "An error occurred while fetching approvals");
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while fetching approvals";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -124,36 +114,25 @@ const Approvals = () => {
 
     try {
       const userId = user?.id || user?._id;
-      const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}?approverId=${userId}`,
+      const response = await api.post(
+        `/api/employees/approvals/${approvalDialog.employee._id}?approverId=${userId}`,
         {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            level: approvalDialog.level,
-            action: approvalDialog.action,
-            comments: comments,
-          }),
+          level: approvalDialog.level,
+          action: approvalDialog.action,
+          comments: comments,
         },
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to process approval");
-      }
 
       // Refresh the approvals list
       await fetchApprovals();
       handleCloseApprovalDialog();
     } catch (err) {
-      setError(err.message || "An error occurred while processing approval");
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while processing approval";
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

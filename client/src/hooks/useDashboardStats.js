@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../store/slices/userSlice";
-import { API_URL } from "../config/api";
+import api from "../utils/api";
 
 const useDashboardStats = () => {
   const [stats, setStats] = useState({
@@ -18,59 +18,34 @@ const useDashboardStats = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch employees count
-        const employeesResponse = await fetch(`${API_URL}/api/employees`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        // Fetch branches count
-        const branchesResponse = await fetch(`${API_URL}/api/branches`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!employeesResponse.ok) {
-          throw new Error(
-            `Failed to fetch employees: ${employeesResponse.statusText}`
-          );
-        }
-        if (!branchesResponse.ok) {
-          throw new Error(
-            `Failed to fetch branches: ${branchesResponse.statusText}`
-          );
-        }
-
-        const employeesData = await employeesResponse.json();
-        const branchesData = await branchesResponse.json();
+        // Fetch employees and branches in parallel
+        const [employeesResponse, branchesResponse] = await Promise.all([
+          api.get("/api/employees"),
+          api.get("/api/branches"),
+        ]);
 
         setStats({
-          staffCount: employeesData.count || 0,
-          branchCount: branchesData.count || 0,
+          staffCount: employeesResponse.data.count || 0,
+          branchCount: branchesResponse.data.count || 0,
         });
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
-        setError(err.message || "Failed to load dashboard statistics");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load dashboard statistics",
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [token]);
+  }, []);
 
   return { ...stats, loading, error };
 };
