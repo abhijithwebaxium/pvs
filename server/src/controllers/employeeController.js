@@ -1001,6 +1001,23 @@ export const getMyApprovals = async (req, res, next) => {
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
 
+    console.log({
+      data: {
+        level1: level1Employees,
+        level2: level2Employees,
+        level3: level3Employees,
+        level4: level4Employees,
+        level5: level5Employees,
+      },
+      counts: {
+        level1: level1Employees.length,
+        level2: level2Employees.length,
+        level3: level3Employees.length,
+        level4: level4Employees.length,
+        level5: level5Employees.length,
+      },
+    });
+
     res.status(200).json({
       success: true,
       data: {
