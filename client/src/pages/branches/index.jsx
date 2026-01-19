@@ -10,7 +10,8 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import AddBranchModal from '../../components/modals/AddBranchModal';
-import API_URL from '../../config/api';
+// import API_URL from '../../config/api';
+import api from '../../utils/api';
 
 const Branches = () => {
   const [branches, setBranches] = useState([]);
@@ -18,34 +19,26 @@ const Branches = () => {
   const [error, setError] = useState('');
   const [openModal, setOpenModal] = useState(false);
 
-  const fetchBranches = async () => {
-    setLoading(true);
-    setError('');
+const fetchBranches = async () => {
+  setLoading(true);
+  setError('');
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/branches`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  try {
+    const response = await api.get('/api/branches');
+    const { data } = response;
 
-      const data = await response.json();
+    setBranches(data.data);
+  } catch (err) {
+    const errorMessage =
+      err.response?.data?.message ||
+      err.message ||
+      'An error occurred while fetching branches';
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch branches');
-      }
-
-      setBranches(data.data);
-    } catch (err) {
-      setError(err.message || 'An error occurred while fetching branches');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchBranches();

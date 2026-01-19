@@ -17,7 +17,8 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SearchIcon from '@mui/icons-material/Search';
 import AddEmployeeModal from '../../components/modals/AddEmployeeModal';
 import UploadEmployeesModal from '../../components/modals/UploadEmployeesModal';
-import API_URL from '../../config/api';
+// import API_URL from '../../config/api';
+import api from '../../utils/api';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -34,57 +35,40 @@ const Employees = () => {
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
 
-  const fetchEmployees = async () => {
-    setLoading(true);
-    setError('');
+const fetchEmployees = async () => {
+  setLoading(true);
+  setError('');
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/employees`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  try {
+    const response = await api.get('/api/employees');
+    const { data } = response;
 
-      const data = await response.json();
+    setEmployees(data.data);
+    setFilteredEmployees(data.data);
+  } catch (err) {
+    const errorMessage =
+      err.response?.data?.message ||
+      err.message ||
+      'An error occurred while fetching employees';
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch employees');
-      }
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      setEmployees(data.data);
-      setFilteredEmployees(data.data);
-    } catch (err) {
-      setError(err.message || 'An error occurred while fetching employees');
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchBranches = async () => {
+  try {
+    const response = await api.get('/api/branches');
+    const { data } = response;
 
-  const fetchBranches = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/branches`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setBranches(data.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch branches:', err);
-    }
-  };
+    setBranches(data.data);
+  } catch (err) {
+    console.error(
+      err.response?.data?.message || 'Failed to fetch branches'
+    );
+  }
+};
 
   useEffect(() => {
     fetchEmployees();
