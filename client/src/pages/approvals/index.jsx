@@ -47,7 +47,6 @@ const Approvals = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentTab, setCurrentTab] = useState(0);
   const [approvalDialog, setApprovalDialog] = useState({
     open: false,
     employee: null,
@@ -94,10 +93,6 @@ const Approvals = () => {
       fetchApprovals();
     }
   }, [user]);
-
-  const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
-  };
 
   const handleOpenApprovalDialog = (employee, level, action) => {
     setApprovalDialog({
@@ -312,6 +307,16 @@ const Approvals = () => {
       flex: 0.8,
     },
     {
+      field: "bonus2024",
+      headerName: "Bonus 2024",
+      width: 120,
+      flex: 0.6,
+      renderCell: (params) => {
+        const bonus = params.row.bonus2024 || 0;
+        return `$${bonus.toLocaleString()}`;
+      },
+    },
+    {
       field: "bonus2025",
       headerName: "Bonus 2025",
       width: 120,
@@ -320,12 +325,6 @@ const Approvals = () => {
         const bonus = params.row.bonus2025 || 0;
         return `$${bonus.toLocaleString()}`;
       },
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      width: 200,
-      flex: 1.2,
     },
     {
       field: "branch",
@@ -601,60 +600,138 @@ const Approvals = () => {
     getActionsColumn(5),
   ];
 
-  const columnsMap = {
-    0: level1Columns,
-    1: level2Columns,
-    2: level3Columns,
-    3: level4Columns,
-    4: level5Columns,
-  };
+  // Create unified columns and merged data
+  const unifiedColumns = [
+    ...baseColumns,
+    {
+      field: "approverLevel",
+      headerName: "Approver Level",
+      width: 130,
+      flex: 0.6,
+      renderCell: (params) => {
+        return (
+          <Chip
+            label={`Level ${params.row.currentPendingLevel}`}
+            size="small"
+            variant="outlined"
+          />
+        );
+      },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 120,
+      flex: 0.6,
+      sortable: false,
+      renderCell: (params) => {
+        const level = params.row.currentPendingLevel;
+        const currentStatus =
+          params.row.approvalStatus?.[`level${level}`]?.status || "pending";
+        const isApproved = currentStatus === "approved";
+        const isRejected = currentStatus === "rejected";
+        const canPerformAction = canApprove(params.row, level);
 
-  const dataMap = {
-    0: approvalsData.level1,
-    1: approvalsData.level2,
-    2: approvalsData.level3,
-    3: approvalsData.level4,
-    4: approvalsData.level5,
-  };
+        if (isApproved)
+          return (
+            <Chip
+              label="Approved"
+              color="success"
+              size="small"
+              icon={<CheckCircleIcon />}
+            />
+          );
+        if (isRejected)
+          return (
+            <Chip
+              label="Rejected"
+              color="error"
+              size="small"
+              icon={<CancelIcon />}
+            />
+          );
 
-  const countsMap = {
-    0: counts.level1,
-    1: counts.level2,
-    2: counts.level3,
-    3: counts.level4,
-    4: counts.level5,
-  };
+        return (
+          <Box sx={{ display: "flex", gap: 0.5 }}>
+            <Tooltip
+              title={
+                canPerformAction
+                  ? "Approve"
+                  : "Previous levels must be approved first"
+              }
+            >
+              <span>
+                <IconButton
+                  size="small"
+                  color="success"
+                  disabled={!canPerformAction}
+                  onClick={() =>
+                    handleOpenApprovalDialog(params.row, level, "approve")
+                  }
+                >
+                  <CheckCircleIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={
+                canPerformAction
+                  ? "Reject"
+                  : "Previous levels must be approved first"
+              }
+            >
+              <span>
+                <IconButton
+                  size="small"
+                  color="error"
+                  disabled={!canPerformAction}
+                  onClick={() =>
+                    handleOpenApprovalDialog(params.row, level, "reject")
+                  }
+                >
+                  <CancelIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+        );
+      },
+    },
+  ];
 
-  // Calculate total pending and approved counts
-  const calculateSummary = () => {
-    // Total pending = sum of all level counts (from backend)
-    const totalPending = Object.values(counts).reduce(
-      (sum, count) => sum + count,
-      0,
-    );
-
-    // Total approved = count employees where current user has approved at the specific level
-    let totalApproved = 0;
-
-    Object.keys(approvalsData).forEach((levelKey) => {
-      // Extract level number from key (e.g., "level1" -> 1)
-      const level = parseInt(levelKey.replace("level", ""));
-      const employees = approvalsData[levelKey];
-
-      if (Array.isArray(employees)) {
-        employees.forEach((employee) => {
-          const status = employee.approvalStatus?.[levelKey]?.status;
-          if (status === "approved") {
-            totalApproved++;
-          }
+  // Merge all levels into one array
+  const mergedRows = [];
+  Object.keys(approvalsData).forEach((levelKey) => {
+    const level = parseInt(levelKey.replace("level", ""));
+    const employees = approvalsData[levelKey];
+    if (Array.isArray(employees)) {
+      employees.forEach((emp) => {
+        mergedRows.push({
+          ...emp,
+          currentPendingLevel: level,
+          uniqueId: `${emp._id}-${level}`, // Ensure unique ID if somehow an employee is in multiple levels
         });
-      }
-    });
+      });
+    }
+  });
+  const totalPending = Object.values(counts).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
 
-    return { totalPending, totalApproved };
-  };
-
-  const { totalPending, totalApproved } = calculateSummary();
+  // Calculate total approved count
+  let totalApproved = 0;
+  Object.keys(approvalsData).forEach((levelKey) => {
+    const employees = approvalsData[levelKey];
+    if (Array.isArray(employees)) {
+      employees.forEach((employee) => {
+        const status = employee.approvalStatus?.[levelKey]?.status;
+        if (status === "approved") {
+          totalApproved++;
+        }
+      });
+    }
+  });
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
@@ -731,50 +808,6 @@ const Approvals = () => {
       </Grid>
 
       <Paper sx={{ width: "100%", mb: 2 }}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs
-            value={currentTab}
-            onChange={handleTabChange}
-            aria-label="approval levels"
-          >
-            <Tab
-              label={
-                <Badge badgeContent={counts.level1} color="primary">
-                  Level 1
-                </Badge>
-              }
-            />
-            <Tab
-              label={
-                <Badge badgeContent={counts.level2} color="primary">
-                  Level 2
-                </Badge>
-              }
-            />
-            <Tab
-              label={
-                <Badge badgeContent={counts.level3} color="primary">
-                  Level 3
-                </Badge>
-              }
-            />
-            <Tab
-              label={
-                <Badge badgeContent={counts.level4} color="primary">
-                  Level 4
-                </Badge>
-              }
-            />
-            <Tab
-              label={
-                <Badge badgeContent={counts.level5} color="primary">
-                  Level 5
-                </Badge>
-              }
-            />
-          </Tabs>
-        </Box>
-
         {loading ? (
           <Box
             sx={{
@@ -788,7 +821,7 @@ const Approvals = () => {
           </Box>
         ) : (
           <Box sx={{ p: 2 }}>
-            {countsMap[currentTab] === 0 ? (
+            {mergedRows.length === 0 ? (
               <Box
                 sx={{
                   display: "flex",
@@ -798,14 +831,14 @@ const Approvals = () => {
                 }}
               >
                 <Typography variant="body1" color="text.secondary">
-                  No employees require your approval at Level {currentTab + 1}
+                  No employees require your approval at any level.
                 </Typography>
               </Box>
             ) : (
               <DataGrid
-                rows={dataMap[currentTab]}
-                columns={columnsMap[currentTab]}
-                getRowId={(row) => row._id}
+                rows={mergedRows}
+                columns={unifiedColumns}
+                getRowId={(row) => row.uniqueId}
                 initialState={{
                   pagination: {
                     paginationModel: { pageSize: 10, page: 0 },

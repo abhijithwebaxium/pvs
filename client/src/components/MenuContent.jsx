@@ -19,7 +19,11 @@ import { selectUser } from "../store/slices/userSlice";
 
 // Define menu items - NO ROLE RESTRICTIONS
 const menuItems = [
-  { text: "Home", icon: <HomeRoundedIcon />, path: "/" },
+  { text: "Home", 
+    icon: <HomeRoundedIcon />, 
+    path: "/",
+    roles: ["admin", "hr"],
+  },
   {
     text: "Branches",
     icon: <BusinessRoundedIcon />,
