@@ -39,10 +39,10 @@ const menuItems = [
     roles: ["admin", "manager", "approver"],
   },
   {
-    text: "Bonuses",
+    text: "Assign Bonuses",
     icon: <AttachMoneyIcon />,
     path: "/bonuses",
-    roles: ["admin", "manager"],
+    roles: ["admin", "manager", "approver"],
   },
 ];
 

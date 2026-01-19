@@ -71,7 +71,7 @@ const Approvals = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const data = await response.json();
@@ -138,7 +138,7 @@ const Approvals = () => {
             action: approvalDialog.action,
             comments: comments,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -630,7 +630,7 @@ const Approvals = () => {
     // Total pending = sum of all level counts (from backend)
     const totalPending = Object.values(counts).reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
 
     // Total approved = count employees where current user has approved at the specific level
@@ -835,8 +835,8 @@ const Approvals = () => {
       >
         <DialogTitle>
           {approvalDialog.action === "approve"
-            ? "Approve Employee"
-            : "Reject Employee"}
+            ? "Approve Employee Bonus"
+            : "Reject Employee Bonus"}
         </DialogTitle>
         <DialogContent>
           {approvalDialog.employee && (
@@ -849,6 +849,10 @@ const Approvals = () => {
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   <strong>Current Level:</strong> {approvalDialog.level}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>2024 Bonus:</strong> $
+                  {(approvalDialog.employee.bonus2024 || 0).toLocaleString()}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   <strong>2025 Bonus:</strong> $
@@ -874,7 +878,7 @@ const Approvals = () => {
                   </Typography>
                   {Array.from(
                     { length: approvalDialog.level - 1 },
-                    (_, i) => i + 1
+                    (_, i) => i + 1,
                   ).map((level) => {
                     const levelKey = `level${level}`;
                     const approvalInfo =
@@ -971,12 +975,13 @@ const Approvals = () => {
             variant="contained"
             color={approvalDialog.action === "approve" ? "success" : "error"}
             disabled={submitting}
+            sx={{ color: "white" }}
           >
             {submitting
               ? "Processing..."
               : approvalDialog.action === "approve"
-              ? "Approve"
-              : "Reject"}
+                ? "Approve"
+                : "Reject"}
           </Button>
         </DialogActions>
       </Dialog>

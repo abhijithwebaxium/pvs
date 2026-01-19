@@ -50,7 +50,7 @@ const Bonuses = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const data = await response.json();
@@ -111,7 +111,7 @@ const Bonuses = () => {
           body: JSON.stringify({
             bonus2025: parseFloat(bonusAmount),
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -262,6 +262,16 @@ const Bonuses = () => {
       },
     },
     {
+      field: "bonus2024",
+      headerName: "Bonus 2024",
+      width: 130,
+      flex: 0.7,
+      renderCell: (params) => {
+        const bonus = params.row.bonus2024 || 0;
+        return `$${bonus.toLocaleString()}`;
+      },
+    },
+    {
       field: "bonus2025",
       headerName: "Bonus 2025",
       width: 130,
@@ -271,61 +281,75 @@ const Bonuses = () => {
         return `$${bonus.toLocaleString()}`;
       },
     },
-    {
-      field: "approvalStatus",
-      headerName: "Approval Status",
-      width: 150,
-      flex: 0.8,
-      renderCell: (params) => {
-        const approvalInfo = getApprovalStatus(params.row);
-        return (
-          <Chip
-            label={approvalInfo.label}
-            color={approvalInfo.color}
-            size="small"
-            icon={
-              approvalInfo.status === "approved" ? (
-                <CheckCircleIcon />
-              ) : approvalInfo.status === "pending" ? (
-                <PendingIcon />
-              ) : approvalInfo.status === "rejected" ? (
-                <CancelIcon />
-              ) : null
-            }
-          />
-        );
-      },
-    },
-    {
-      field: "nextApprover",
-      headerName: "Next Approver",
-      width: 200,
-      flex: 1.2,
-      renderCell: (params) => getNextApprover(params.row),
-    },
+    // {
+    //   field: "approvalStatus",
+    //   headerName: "Approval Status",
+    //   width: 150,
+    //   flex: 0.8,
+    //   renderCell: (params) => {
+    //     const approvalInfo = getApprovalStatus(params.row);
+    //     return (
+    //       <Chip
+    //         label={approvalInfo.label}
+    //         color={approvalInfo.color}
+    //         size="small"
+    //         icon={
+    //           approvalInfo.status === "approved" ? (
+    //             <CheckCircleIcon />
+    //           ) : approvalInfo.status === "pending" ? (
+    //             <PendingIcon />
+    //           ) : approvalInfo.status === "rejected" ? (
+    //             <CancelIcon />
+    //           ) : null
+    //         }
+    //       />
+    //     );
+    //   },
+    // },
+    // {
+    //   field: "nextApprover",
+    //   headerName: "Next Approver",
+    //   width: 200,
+    //   flex: 1.2,
+    //   renderCell: (params) => getNextApprover(params.row),
+    // },
     {
       field: "actions",
       headerName: "Actions",
-      width: 100,
+      width: 140,
       flex: 0.5,
       sortable: false,
       renderCell: (params) => {
         const approvalInfo = getApprovalStatus(params.row);
         const canEdit = approvalInfo.status !== "approved";
 
+        // If bonus is not entered yet, show "Add Bonus" button
+        if (approvalInfo.status === "not_entered") {
+          return (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleOpenBonusDialog(params.row)}
+              sx={{ fontSize: "0.75rem", py: 0.5, minWidth: "auto" }}
+            >
+              Add Bonus
+            </Button>
+          );
+        }
+
+        // If bonus is entered, show "Edit Bonus" text button
         return (
-          <Tooltip
-            title={canEdit ? "Edit Bonus" : "Cannot edit fully approved bonus"}
-          >
+          <Tooltip title={canEdit ? "" : "Cannot edit fully approved bonus"}>
             <span>
-              <IconButton
+              <Button
+                variant="outlined"
                 size="small"
-                color="primary"
                 disabled={!canEdit}
                 onClick={() => handleOpenBonusDialog(params.row)}
+                sx={{ fontSize: "0.75rem", py: 0.5, minWidth: "auto" }}
               >
-                <EditIcon />
-              </IconButton>
+                Edit Bonus
+              </Button>
             </span>
           </Tooltip>
         );
@@ -336,7 +360,7 @@ const Bonuses = () => {
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Manage Employee Bonuses
+        Assign Employee Bonuses
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -408,7 +432,8 @@ const Bonuses = () => {
         fullWidth
       >
         <DialogTitle>
-          Edit Bonus for {bonusDialog.employee?.firstName}{" "}
+          {bonusDialog.employee?.bonus2025Status?.enteredBy ? "Edit" : "Add"}{" "}
+          Bonus for {bonusDialog.employee?.firstName}{" "}
           {bonusDialog.employee?.lastName}
         </DialogTitle>
         <DialogContent>
@@ -463,6 +488,14 @@ const Bonuses = () => {
             variant="contained"
             color="primary"
             disabled={submitting || !bonusAmount}
+            sx={{
+              color: "#FFFFFF",
+              "&.Mui-disabled": {
+                color: "#FFFFFF",
+                opacity: 0.7,
+                backgroundColor: "rgba(0, 0, 0, 0.12)",
+              },
+            }}
           >
             {submitting ? "Saving..." : "Save & Send for Approval"}
           </Button>
