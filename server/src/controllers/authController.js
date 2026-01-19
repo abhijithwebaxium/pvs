@@ -99,12 +99,16 @@ export const login = async (req, res, next) => {
       approverLevel: employee.approverLevel,
     });
 
+    const isProd = process.env.NODE_ENV === "production";
+
     // Set token in cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production" || true, // Force secure for sameSite: 'none'
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site in production
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+      path: "/",
+      domain: isProd ? ".pvs-xi.vercel.app/" : undefined,
     });
 
     res.status(200).json({
