@@ -194,8 +194,8 @@ const EmployeeSchema = new Schema(
       level1: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected", "not_required"],
-          default: "not_required",
+          enum: ["pending", "approved", "rejected",],
+          default: "pending",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
@@ -214,8 +214,8 @@ const EmployeeSchema = new Schema(
       level2: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected", "not_required"],
-          default: "not_required",
+          enum: ["pending", "approved", "rejected",],
+          default: "pending",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
@@ -234,8 +234,8 @@ const EmployeeSchema = new Schema(
       level3: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected", "not_required"],
-          default: "not_required",
+          enum: ["pending", "approved", "rejected",],
+          default: "pending",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
@@ -254,8 +254,8 @@ const EmployeeSchema = new Schema(
       level4: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected", "not_required"],
-          default: "not_required",
+          enum: ["pending", "approved", "rejected",],
+          default: "pending",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
@@ -274,8 +274,8 @@ const EmployeeSchema = new Schema(
       level5: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected", "not_required"],
-          default: "not_required",
+          enum: ["pending", "approved", "rejected",],
+          default: "pending",
         },
         approvedBy: {
           type: Schema.Types.ObjectId,
