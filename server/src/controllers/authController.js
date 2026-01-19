@@ -108,7 +108,7 @@ export const login = async (req, res, next) => {
       sameSite: isProd ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
       path: "/",
-      domain: isProd ? ".pvs-xi.vercel.app/" : undefined,
+      domain: isProd ? ".pvs-xi.vercel.app" : undefined,
     });
 
     res.status(200).json({
