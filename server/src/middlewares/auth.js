@@ -12,7 +12,6 @@ export const protect = async (req, res, next) => {
     }
 
     console.log(req.cookies.token, "Token from cookie");
-    console.log(req?.headers?.authorization, "Token from header");
 
     if (!token) {
       req.user = { isAuthenticated: false };

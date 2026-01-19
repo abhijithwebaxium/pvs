@@ -42,6 +42,8 @@ const Bonuses = () => {
 
     try {
       const userId = user?.id || user?._id;
+      const token = localStorage.getItem("token");
+
       const response = await fetch(
         `${API_URL}/api/employees/supervisor/my-team?supervisorId=${userId}`,
         {
@@ -49,6 +51,7 @@ const Bonuses = () => {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
         },
       );
@@ -100,6 +103,8 @@ const Bonuses = () => {
 
     try {
       const userId = user?.id || user?._id;
+      const token = localStorage.getItem("token");
+
       const response = await fetch(
         `${API_URL}/api/employees/${bonusDialog.employee._id}/bonus?supervisorId=${userId}`,
         {
@@ -107,6 +112,7 @@ const Bonuses = () => {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             bonus2025: parseFloat(bonusAmount),

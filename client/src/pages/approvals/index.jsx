@@ -63,6 +63,8 @@ const Approvals = () => {
 
     try {
       const userId = user?.id || user?._id;
+      const token = localStorage.getItem("token");
+
       const response = await fetch(
         `${API_URL}/api/employees/approvals/my-approvals?approverId=${userId}`,
         {
@@ -70,6 +72,7 @@ const Approvals = () => {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
         },
       );
@@ -121,6 +124,8 @@ const Approvals = () => {
 
     try {
       const userId = user?.id || user?._id;
+      const token = localStorage.getItem("token");
+
       const response = await fetch(
         `${API_URL}/api/employees/approvals/${approvalDialog.employee._id}?approverId=${userId}`,
         {
@@ -128,6 +133,7 @@ const Approvals = () => {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             level: approvalDialog.level,
