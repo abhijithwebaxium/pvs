@@ -1,7 +1,7 @@
-import Employee from '../models/Employee.js';
-import { generateToken } from '../utils/jwt.js';
-import AppError from '../utils/appError.js';
-import bcrypt from 'bcryptjs';
+import Employee from "../models/Employee.js";
+import { generateToken } from "../utils/jwt.js";
+import AppError from "../utils/appError.js";
+import bcrypt from "bcryptjs";
 
 // @desc    Register new employee
 // @route   POST /api/auth/signup
@@ -12,7 +12,7 @@ export const signup = async (req, res, next) => {
 
     // Validation
     if (!firstName || !lastName || !email || !employeeId || !password) {
-      return next(new AppError('Please provide all required fields', 400));
+      return next(new AppError("Please provide all required fields", 400));
     }
 
     // Check if employee already exists
@@ -22,10 +22,10 @@ export const signup = async (req, res, next) => {
 
     if (existingEmployee) {
       if (existingEmployee.email === email) {
-        return next(new AppError('Email already registered', 400));
+        return next(new AppError("Email already registered", 400));
       }
       if (existingEmployee.employeeId === employeeId) {
-        return next(new AppError('Employee ID already exists', 400));
+        return next(new AppError("Employee ID already exists", 400));
       }
     }
 
@@ -40,8 +40,8 @@ export const signup = async (req, res, next) => {
       email,
       employeeId,
       password: hashedPassword,
-      position: 'New Employee', // Default position
-      role: 'employee',
+      position: "New Employee", // Default position
+      role: "employee",
       hireDate: new Date(),
       salary: 0, // Default salary, should be updated by HR
       isApprover: false,
@@ -49,7 +49,7 @@ export const signup = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Employee registered successfully. Please login.',
+      message: "Employee registered successfully. Please login.",
       data: {
         user: {
           id: employee._id,
@@ -73,20 +73,20 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return next(new AppError('Please provide email and password', 400));
+      return next(new AppError("Please provide email and password", 400));
     }
 
     // Find employee by email
     const employee = await Employee.findOne({ email });
 
     if (!employee) {
-      return next(new AppError('Invalid credentials', 401));
+      return next(new AppError("Invalid credentials", 401));
     }
 
     // Check password
     const isPasswordCorrect = await bcrypt.compare(password, employee.password);
     if (!isPasswordCorrect) {
-      return next(new AppError('Invalid credentials', 401));
+      return next(new AppError("Invalid credentials", 401));
     }
 
     // Generate token
@@ -100,10 +100,10 @@ export const login = async (req, res, next) => {
     });
 
     // Set token in cookie
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      secure: process.env.NODE_ENV === "production" || true, // Force secure for sameSite: 'none'
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site in production
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
@@ -133,14 +133,14 @@ export const login = async (req, res, next) => {
 // @route   POST /api/auth/logout
 // @access  Private
 export const logout = (req, res) => {
-  res.cookie('token', '', {
+  res.cookie("token", "", {
     httpOnly: true,
     expires: new Date(0),
   });
 
   res.status(200).json({
     success: true,
-    message: 'Logged out successfully',
+    message: "Logged out successfully",
   });
 };
 
@@ -150,11 +150,11 @@ export const logout = (req, res) => {
 export const getMe = async (req, res, next) => {
   try {
     const user = await Employee.findById(req.user.userId)
-      .select('-password')
-      .populate('branch', 'branchCode branchName location');
+      .select("-password")
+      .populate("branch", "branchCode branchName location");
 
     if (!user) {
-      return next(new AppError('User not found', 404));
+      return next(new AppError("User not found", 404));
     }
 
     res.status(200).json({
