@@ -16,7 +16,7 @@ router.use(protect); // All routes are protected
 // Only HR and Admin can view branches
 router
   .route("/")
-  .get(authorize(["hr", "admin"]), getBranches)
+  .get(authorize(["hr", "admin", "approver", "employee"]), getBranches)
   .post(authorize(["hr", "admin"]), createBranch);
 
 router

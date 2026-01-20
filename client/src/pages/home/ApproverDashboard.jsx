@@ -70,6 +70,7 @@ const ApproverDashboard = ({ user }) => {
           <Card
             sx={{
               height: "100%",
+              width: "100%",
               background: "linear-gradient(135deg, #FFA726 0%, #FB8C00 100%)",
               color: "white",
               boxShadow: "0 8px 24px rgba(255, 152, 0, 0.3)",
@@ -140,6 +141,7 @@ const ApproverDashboard = ({ user }) => {
           <Card
             sx={{
               height: "100%",
+              width: "100%",
               background: "linear-gradient(135deg, #66BB6A 0%, #43A047 100%)",
               color: "white",
               boxShadow: "0 8px 24px rgba(76, 175, 80, 0.3)",

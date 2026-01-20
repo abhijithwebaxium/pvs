@@ -5,7 +5,29 @@ import MenuButton from "./MenuButton";
 import ColorModeIconDropdown from "../theme/shared/ColorModeIconDropdown";
 import Search from "./Search";
 
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import { logout } from "../store/slices/userSlice";
+import api from "../utils/api";
+
 export default function Header() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/api/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear Redux state and localStorage
+      dispatch(logout());
+      // Redirect to login page
+      navigate("/login");
+    }
+  };
+
   return (
     <Stack
       direction="row"
@@ -27,6 +49,9 @@ export default function Header() {
           <NotificationsRoundedIcon />
         </MenuButton>
         <ColorModeIconDropdown />
+        <MenuButton aria-label="logout" onClick={handleLogout}>
+          <LogoutRoundedIcon />
+        </MenuButton>
       </Stack>
     </Stack>
   );

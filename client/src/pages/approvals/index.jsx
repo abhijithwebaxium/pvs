@@ -26,6 +26,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import InfoIcon from "@mui/icons-material/Info";
+import SearchIcon from "@mui/icons-material/Search";
+import { MenuItem, InputAdornment } from "@mui/material";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/userSlice";
 import api from "../../utils/api";
@@ -57,6 +59,29 @@ const Approvals = () => {
   const [comments, setComments] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Filter states
+  const [filterStatus, setFilterStatus] = useState("all"); // 'all', 'pending', 'approved'
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedSupervisor, setSelectedSupervisor] = useState(""); // Supervisor State
+  const [branches, setBranches] = useState([]);
+
+  const fetchBranches = async () => {
+    try {
+      const response = await api.get("/api/branches");
+      console.log("Branch API Response:", response);
+      const { data } = response;
+      console.log("Extracted data:", data);
+      console.log("Branches array:", data.data);
+
+      setBranches(data.data);
+      console.log("Branches state set to:", data.data);
+    } catch (err) {
+      console.error("fetchBranches error:", err.response?.data || err.message);
+    }
+  };
+
   const fetchApprovals = async () => {
     setLoading(true);
     setError("");
@@ -68,7 +93,6 @@ const Approvals = () => {
       );
 
       const { data } = response;
-      console.log(data, "data");
       setApprovalsData(data.data);
       setCounts(data.counts);
     } catch (err) {
@@ -85,6 +109,7 @@ const Approvals = () => {
   useEffect(() => {
     if (user?.id || user?._id) {
       fetchApprovals();
+      fetchBranches();
     }
   }, [user]);
 
@@ -330,278 +355,209 @@ const Approvals = () => {
     },
   ];
 
+  // Helper to create Level Approver columns consistently
+  const getLevelColumn = (level) => ({
+    field: `approvalStatus.level${level}.status`,
+    headerName: `Level ${level} (Approver)`,
+    width: 160,
+    flex: 1,
+    renderCell: (params) => {
+      const status =
+        params.row.approvalStatus?.[`level${level}`]?.status || "pending";
+      const approverName = params.row[`level${level}ApproverName`];
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 0.5,
+            py: 1,
+          }}
+        >
+          {getStatusChip(status)}
+          {approverName && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: "0.7rem", lineHeight: 1 }}
+            >
+              {approverName}
+            </Typography>
+          )}
+        </Box>
+      );
+    },
+  });
+
   // Level 1 columns - no previous approvals
   const level1Columns = [
     ...baseColumns,
-    {
-      field: "approvalStatus.level1.status",
-      headerName: "Level 1 Status",
-      width: 150,
-      flex: 0.8,
-      renderCell: (params) => {
-        const status = params.row.approvalStatus?.level1?.status || "pending";
-        return getStatusChip(status);
-      },
-    },
+    getLevelColumn(1),
     getActionsColumn(1),
   ];
 
-  // Level 2 columns - show level 1 info
+  // Level 2 columns - show level 1 info + level 2
   const level2Columns = [
     ...baseColumns,
-    {
-      field: "level1Approver",
-      headerName: "Level 1 Approver",
-      width: 200,
-      flex: 1,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level1Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level1.status",
-      headerName: "Level 1 Status",
-      width: 130,
-      flex: 0.7,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level1?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "approvalStatus.level2.status",
-      headerName: "Level 2 Status",
-      width: 130,
-      flex: 0.7,
-      renderCell: (params) => {
-        const status = params.row.approvalStatus?.level2?.status || "pending";
-        return getStatusChip(status);
-      },
-    },
+    getLevelColumn(1),
+    getLevelColumn(2),
     getActionsColumn(2),
   ];
 
-  // Level 3 columns - show level 1 & 2 info
+  // Level 3 columns - show level 2 info + level 3
   const level3Columns = [
     ...baseColumns,
-    {
-      field: "level1Approver",
-      headerName: "Level 1 Approver",
-      width: 200,
-      flex: 0.9,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level1Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level1.status",
-      headerName: "L1 Status",
-      width: 110,
-      flex: 0.6,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level1?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "level2Approver",
-      headerName: "Level 2 Approver",
-      width: 200,
-      flex: 0.9,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level2Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level2.status",
-      headerName: "L2 Status",
-      width: 110,
-      flex: 0.6,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level2?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "approvalStatus.level3.status",
-      headerName: "L3 Status",
-      width: 110,
-      flex: 0.6,
-      renderCell: (params) => {
-        const status = params.row.approvalStatus?.level3?.status || "pending";
-        return getStatusChip(status);
-      },
-    },
+    getLevelColumn(2),
+    getLevelColumn(3),
     getActionsColumn(3),
   ];
 
-  // Level 4 columns - show level 1, 2 & 3 info
+  // Level 4 columns - show level 3 info + level 4
   const level4Columns = [
     ...baseColumns,
-    {
-      field: "level1Approver",
-      headerName: "L1 Approver",
-      width: 180,
-      flex: 0.8,
-      renderCell: (params) => getApproverInfo(params.row.level1Approver),
-    },
-    {
-      field: "approvalStatus.level1.status",
-      headerName: "L1",
-      width: 90,
-      flex: 0.5,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level1?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "level2Approver",
-      headerName: "L2 Approver",
-      width: 180,
-      flex: 0.8,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level2Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level2.status",
-      headerName: "L2",
-      width: 90,
-      flex: 0.5,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level2?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "level3Approver",
-      headerName: "L3 Approver",
-      width: 180,
-      flex: 0.8,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level3Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level3.status",
-      headerName: "L3",
-      width: 90,
-      flex: 0.5,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level3?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "approvalStatus.level4.status",
-      headerName: "L4",
-      width: 90,
-      flex: 0.5,
-      renderCell: (params) => {
-        const status = params.row.approvalStatus?.level4?.status || "pending";
-        return getStatusChip(status);
-      },
-    },
+    getLevelColumn(3),
+    getLevelColumn(4),
     getActionsColumn(4),
   ];
 
-  // Level 5 columns - show all previous levels
+  // Level 5 columns - show level 4 info + level 5
   const level5Columns = [
     ...baseColumns,
-    {
-      field: "level1Approver",
-      headerName: "L1 Approver",
-      width: 170,
-      flex: 0.7,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level1Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level1.status",
-      headerName: "L1",
-      width: 85,
-      flex: 0.4,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level1?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "level2Approver",
-      headerName: "L2 Approver",
-      width: 170,
-      flex: 0.7,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level2Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level2.status",
-      headerName: "L2",
-      width: 85,
-      flex: 0.4,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level2?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "level3Approver",
-      headerName: "L3 Approver",
-      width: 170,
-      flex: 0.7,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level3Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level3.status",
-      headerName: "L3",
-      width: 85,
-      flex: 0.4,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level3?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "level4Approver",
-      headerName: "L4 Approver",
-      width: 170,
-      flex: 0.7,
-      renderCell: (params) =>
-        getApproverInfo(params.row.level4Approver) || "Not Assigned",
-    },
-    {
-      field: "approvalStatus.level4.status",
-      headerName: "L4",
-      width: 85,
-      flex: 0.4,
-      renderCell: (params) => {
-        const status =
-          params.row.approvalStatus?.level4?.status || "not_required";
-        return getStatusChip(status);
-      },
-    },
-    {
-      field: "approvalStatus.level5.status",
-      headerName: "L5",
-      width: 85,
-      flex: 0.4,
-      renderCell: (params) => {
-        const status = params.row.approvalStatus?.level5?.status || "pending";
-        return getStatusChip(status);
-      },
-    },
+    getLevelColumn(4),
+    getLevelColumn(5),
     getActionsColumn(5),
   ];
 
-  // Create unified columns and merged data
+  // Calculate the current pending level for an employee
+  const getPendingLevel = (emp) => {
+    for (let i = 1; i <= 5; i++) {
+      const status = emp.approvalStatus?.[`level${i}`]?.status || "pending";
+      if (status === "pending" && emp[`level${i}Approver`]) {
+        return i;
+      }
+    }
+    return 1;
+  };
+
+  // Merge all levels into one array
+  const mergedRows = [];
+  if (
+    approvalsData &&
+    typeof approvalsData === "object" &&
+    !Array.isArray(approvalsData)
+  ) {
+    Object.keys(approvalsData).forEach((levelKey) => {
+      const level = parseInt(levelKey.replace("level", ""));
+      const employees = approvalsData[levelKey];
+      if (Array.isArray(employees)) {
+        employees.forEach((emp) => {
+          // Map all level approver names
+          const approverNames = {};
+          for (let i = 1; i <= 5; i++) {
+            const approver = emp[`level${i}Approver`];
+            approverNames[`level${i}ApproverName`] = approver
+              ? `${approver.firstName} ${approver.lastName}`
+              : "N/A";
+          }
+
+          mergedRows.push({
+            ...emp,
+            currentPendingLevel: level,
+            uniqueId: `${emp._id}-${level}`,
+            ...approverNames,
+          });
+        });
+      }
+    });
+  } else if (Array.isArray(approvalsData)) {
+    // Fallback if data is already a flat array
+    approvalsData.forEach((emp) => {
+      // Try to determine level from approvalStatus if not provided
+      let level = 1;
+      for (let i = 1; i <= 5; i++) {
+        if (
+          emp.approvalStatus?.[`level${i}`]?.status === "pending" &&
+          emp[`level${i}Approver`]
+        ) {
+          level = i;
+          break;
+        }
+      }
+
+      // Map all level approver names
+      const approverNames = {};
+      for (let i = 1; i <= 5; i++) {
+        const approver = emp[`level${i}Approver`];
+        approverNames[`level${i}ApproverName`] = approver
+          ? `${approver.firstName} ${approver.lastName}`
+          : "N/A";
+      }
+
+      mergedRows.push({
+        ...emp,
+        currentPendingLevel: level,
+        uniqueId: `${emp._id}-${level}`,
+        ...approverNames,
+      });
+    });
+  }
+
+  // Determine if we need the Previous Level Approver column
+  // Check if there are any rows with level > 1
+  const hasHigherLevels = mergedRows.some(row => row.currentPendingLevel > 1);
+
+  // Previous Level Approver Column (only shown if there are approvals at level 2+)
+  const previousLevelColumn = hasHigherLevels ? {
+    field: "previousLevelApprover",
+    headerName: "Previous Level Approver",
+    width: 200,
+    flex: 1,
+    renderCell: (params) => {
+      const currentLevel = params.row.currentPendingLevel;
+
+      // If level 1, this shouldn't show, but just in case
+      if (currentLevel === 1) {
+        return null;
+      }
+
+      // Get previous level
+      const prevLevel = currentLevel - 1;
+      const prevStatus =
+        params.row.approvalStatus?.[`level${prevLevel}`]?.status || "pending";
+      const prevApproverName = params.row[`level${prevLevel}ApproverName`];
+
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 0.5,
+            py: 1,
+          }}
+        >
+          {getStatusChip(prevStatus)}
+          {prevApproverName && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: "0.7rem", lineHeight: 1 }}
+            >
+              {prevApproverName}
+            </Typography>
+          )}
+        </Box>
+      );
+    },
+  } : null;
+
+  // Create unified columns
   const unifiedColumns = [
     ...baseColumns,
+    // Add Previous Level column only if it exists
+    ...(previousLevelColumn ? [previousLevelColumn] : []),
+    // Approver Level Column
     {
       field: "approverLevel",
       headerName: "Approver Level",
@@ -804,102 +760,97 @@ const Approvals = () => {
     },
   ];
 
-  // Calculate the current pending level for an employee
-  const getPendingLevel = (emp) => {
-    for (let i = 1; i <= 5; i++) {
-      const status = emp.approvalStatus?.[`level${i}`]?.status || "pending";
-      if (status === "pending" && emp[`level${i}Approver`]) {
-        return i;
-      }
+  // Extract unique supervisors
+  const uniqueSupervisors = [
+    ...new Set(
+      mergedRows.map((row) => row.supervisorName).filter((name) => name), // Remove null/undefined
+    ),
+  ].sort();
+
+  // 1. First, apply strict filters (Search, Branch, Role, Supervisor) excluding Status
+  // This gives us the "Pool" of relevant employees for the current view
+  const baseFilteredRows = mergedRows.filter((row) => {
+    // Search Filter
+    let searchMatch = true;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      searchMatch =
+        row.employeeId?.toLowerCase().includes(query) ||
+        row.firstName?.toLowerCase().includes(query) ||
+        row.lastName?.toLowerCase().includes(query) ||
+        row.email?.toLowerCase().includes(query) ||
+        `${row.firstName} ${row.lastName}`.toLowerCase().includes(query);
     }
-    return 1;
-  };
 
-  // Merge all levels into one array
-  const mergedRows = [];
-  if (
-    approvalsData &&
-    typeof approvalsData === "object" &&
-    !Array.isArray(approvalsData)
-  ) {
-    Object.keys(approvalsData).forEach((levelKey) => {
-      const level = parseInt(levelKey.replace("level", ""));
-      const employees = approvalsData[levelKey];
-      if (Array.isArray(employees)) {
-        employees.forEach((emp) => {
-          mergedRows.push({
-            ...emp,
-            currentPendingLevel: level,
-            uniqueId: `${emp._id}-${level}`,
-          });
-        });
-      }
-    });
-  } else if (Array.isArray(approvalsData)) {
-    // Fallback if data is already a flat array
-    approvalsData.forEach((emp) => {
-      // Try to determine level from approvalStatus if not provided
-      let level = 1;
-      for (let i = 1; i <= 5; i++) {
-        if (
-          emp.approvalStatus?.[`level${i}`]?.status === "pending" &&
-          emp[`level${i}Approver`]
-        ) {
-          level = i;
-          break;
-        }
-      }
-      mergedRows.push({
-        ...emp,
-        currentPendingLevel: level,
-        uniqueId: `${emp._id}-${level}`,
-      });
-    });
-  }
+    // Branch Filter
+    let branchMatch = true;
+    if (selectedBranch) {
+      branchMatch = row.branch?._id === selectedBranch;
+    }
 
-  // Calculate summary counts
+    // Role Filter
+    let roleMatch = true;
+    if (selectedRole) {
+      roleMatch = row.role === selectedRole;
+    }
+
+    // Supervisor Filter
+    let supervisorMatch = true;
+    if (selectedSupervisor) {
+      supervisorMatch = row.supervisorName === selectedSupervisor;
+    }
+
+    return searchMatch && branchMatch && roleMatch && supervisorMatch;
+  });
+
+  // 2. Determine Counts from the "Pool"
   let totalPending = 0;
   let totalApproved = 0;
 
-  if (
-    approvalsData &&
-    typeof approvalsData === "object" &&
-    !Array.isArray(approvalsData)
-  ) {
-    Object.keys(approvalsData).forEach((levelKey) => {
-      const employees = approvalsData[levelKey];
-      if (Array.isArray(employees)) {
-        employees.forEach((employee) => {
-          const status =
-            employee.approvalStatus?.[levelKey]?.status || "pending";
-          if (status === "approved") {
-            totalApproved++;
-          } else if (status === "rejected") {
-            // Not counted in either for now, or could be in total
-          } else {
-            totalPending++;
-          }
-        });
-      }
-    });
-  } else if (Array.isArray(approvalsData)) {
-    mergedRows.forEach((row) => {
+  baseFilteredRows.forEach((row) => {
+    const status =
+      row.approvalStatus?.[`level${row.currentPendingLevel}`]?.status ||
+      "pending";
+    if (status === "approved") {
+      totalApproved++;
+    } else if (status !== "rejected") {
+      totalPending++;
+    }
+  });
+
+  // 3. Finally, apply the Status Filter for the visual table list
+  const filteredRows = baseFilteredRows.filter((row) => {
+    let statusMatch = true;
+    if (filterStatus !== "all") {
       const status =
         row.approvalStatus?.[`level${row.currentPendingLevel}`]?.status ||
         "pending";
-      if (status === "approved") {
-        totalApproved++;
-      } else if (status !== "rejected") {
-        totalPending++;
-      }
-    });
-  }
+      if (filterStatus === "pending")
+        statusMatch = status !== "approved" && status !== "rejected";
+      if (filterStatus === "approved") statusMatch = status === "approved";
+    }
+    return statusMatch;
+  });
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
-      <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        My Approvals
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography component="h2" variant="h6">
+          My Approvals
+        </Typography>
+        {filterStatus !== "all" && (
+          <Button size="small" onClick={() => setFilterStatus("all")}>
+            Clear Filter
+          </Button>
+        )}
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -908,10 +859,26 @@ const Approvals = () => {
       )}
 
       {/* Summary Cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      {/* <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6}>
           <Card
-            sx={{ bgcolor: "warning.light", color: "warning.contrastText" }}
+            onClick={() =>
+              setFilterStatus(filterStatus === "pending" ? "all" : "pending")
+            }
+            sx={{
+              height: "100%",
+              width: "100%",
+              bgcolor: "warning.light",
+              color: "warning.contrastText",
+              cursor: "pointer",
+              transition: "transform 0.2s, box-shadow 0.2s",
+              border: filterStatus === "pending" ? "3px solid" : "none",
+              borderColor: "warning.dark",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: (theme) => theme.shadows[4],
+              },
+            }}
           >
             <CardContent>
               <Box
@@ -940,7 +907,23 @@ const Approvals = () => {
         </Grid>
         <Grid item xs={12} sm={6}>
           <Card
-            sx={{ bgcolor: "success.light", color: "success.contrastText" }}
+            onClick={() =>
+              setFilterStatus(filterStatus === "approved" ? "all" : "approved")
+            }
+            sx={{
+              height: "100%",
+              width: "100%",
+              bgcolor: "success.light",
+              color: "success.contrastText",
+              cursor: "pointer",
+              transition: "transform 0.2s, box-shadow 0.2s",
+              border: filterStatus === "approved" ? "3px solid" : "none",
+              borderColor: "success.dark",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: (theme) => theme.shadows[4],
+              },
+            }}
           >
             <CardContent>
               <Box
@@ -967,9 +950,142 @@ const Approvals = () => {
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
+      </Grid> */}
+      {/* Approvals Table with Filters Header */}
+      <Paper sx={{ width: "100%", mb: 2, overflow: "hidden" }}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: 1,
+            borderColor: "divider",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 2,
+            bgcolor: "background.paper", // Ensure background color
+          }}
+        >
+          <Typography variant="h6" component="div">
+            Approval Requests
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {/* Search Bar */}
+            <TextField
+              size="small"
+              placeholder="Search employees..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ minWidth: 250 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-      <Paper sx={{ width: "100%", mb: 2 }}>
+            {/* Branch Filter */}
+            <TextField
+              select
+              size="small"
+              label="Branch"
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">All Branches</MenuItem>
+              {branches.map((branch) => (
+                <MenuItem key={branch._id} value={branch._id}>
+                  {branch.branchCode} - {branch.branchName}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {/* Role Filter */}
+            <TextField
+              select
+              size="small"
+              label="Role"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              <MenuItem value="">All Roles</MenuItem>
+              <MenuItem value="employee">Employee</MenuItem>
+              <MenuItem value="approver">Approver</MenuItem>
+              <MenuItem value="hr">HR</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </TextField>
+
+            {/* Supervisor Filter */}
+            <TextField
+              select
+              size="small"
+              label="Supervisor"
+              value={selectedSupervisor}
+              onChange={(e) => setSelectedSupervisor(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">All Supervisors</MenuItem>
+              {uniqueSupervisors.map((name) => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Chip
+                icon={<PendingActionsIcon />}
+                label={`Pending: ${totalPending}`}
+                color={filterStatus === "pending" ? "warning" : "default"}
+                variant={filterStatus === "pending" ? "filled" : "outlined"}
+                clickable
+                onClick={() =>
+                  setFilterStatus((prev) =>
+                    prev === "pending" ? "all" : "pending",
+                  )
+                }
+                sx={{
+                  fontWeight: "bold",
+                  borderColor: "warning.main",
+                  color:
+                    filterStatus === "pending"
+                      ? "warning.contrastText"
+                      : "warning.main",
+                }}
+              />
+              <Chip
+                icon={<CheckCircleIcon />}
+                label={`Approved: ${totalApproved}`}
+                color={filterStatus === "approved" ? "success" : "default"}
+                variant={filterStatus === "approved" ? "filled" : "outlined"}
+                clickable
+                onClick={() =>
+                  setFilterStatus((prev) =>
+                    prev === "approved" ? "all" : "approved",
+                  )
+                }
+                sx={{
+                  fontWeight: "bold",
+                  borderColor: "success.main",
+                  color:
+                    filterStatus === "approved"
+                      ? "success.contrastText"
+                      : "success.main",
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
         {loading ? (
           <Box
             sx={{
@@ -983,22 +1099,36 @@ const Approvals = () => {
           </Box>
         ) : (
           <Box sx={{ p: 2 }}>
-            {mergedRows.length === 0 ? (
+            {filteredRows.length === 0 ? (
               <Box
                 sx={{
                   display: "flex",
+                  flexDirection: "column",
                   justifyContent: "center",
                   alignItems: "center",
                   minHeight: 200,
+                  gap: 2,
                 }}
               >
                 <Typography variant="body1" color="text.secondary">
-                  No employees require your approval at any level.
+                  {filterStatus === "all"
+                    ? "No employees require your approval at any level."
+                    : filterStatus === "approved"
+                      ? "You haven't approved any employees yet."
+                      : "No pending approvals found."}
                 </Typography>
+                {filterStatus !== "all" && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => setFilterStatus("all")}
+                  >
+                    Show All
+                  </Button>
+                )}
               </Box>
             ) : (
               <DataGrid
-                rows={mergedRows}
+                rows={filteredRows}
                 columns={unifiedColumns}
                 getRowId={(row) => row.uniqueId}
                 initialState={{

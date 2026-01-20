@@ -572,25 +572,12 @@ export const bulkCreateEmployees = async (req, res, next) => {
     // Update role to "approver" for all employees who are approvers
     let approverRoleCount = 0;
     if (approverIds.size > 0) {
-      console.log(`[BULK UPLOAD] Found ${approverIds.size} unique approvers`);
-      console.log(
-        `[BULK UPLOAD] Approver IDs:`,
-        Array.from(approverIds).slice(0, 5),
-        "...",
-      );
 
       const updateResult = await Employee.updateMany(
         { _id: { $in: Array.from(approverIds) } },
         { $set: { role: "approver", isApprover: true } },
       );
       approverRoleCount = updateResult.modifiedCount;
-
-      console.log(
-        `[BULK UPLOAD] Updated ${approverRoleCount} employees to approver role`,
-      );
-      console.log(
-        `[BULK UPLOAD] matchedCount: ${updateResult.matchedCount}, modifiedCount: ${updateResult.modifiedCount}`,
-      );
     }
 
     // If there were skipped duplicates, return 207 instead of 201
@@ -709,7 +696,6 @@ export const resetAndSyncApprovers = async (req, res, next) => {
 // @access  Private (Admin only)
 export const setApproverRoles = async (req, res, next) => {
   try {
-    console.log("[SET APPROVER ROLES] Starting...");
 
     // Find all employees who are assigned as approvers
     const employeesWithApprovers = await Employee.find({
@@ -724,9 +710,6 @@ export const setApproverRoles = async (req, res, next) => {
       "level1Approver level2Approver level3Approver level4Approver level5Approver employeeId",
     );
 
-    console.log(
-      `[SET APPROVER ROLES] Found ${employeesWithApprovers.length} employees with approvers`,
-    );
 
     // Collect all unique approver IDs
     const approverIds = new Set();
@@ -738,9 +721,6 @@ export const setApproverRoles = async (req, res, next) => {
       if (emp.level5Approver) approverIds.add(emp.level5Approver.toString());
     }
 
-    console.log(
-      `[SET APPROVER ROLES] Found ${approverIds.size} unique approver IDs`,
-    );
 
     // Update role to "approver" for all employees who are approvers
     let approverRoleCount = 0;
@@ -750,16 +730,8 @@ export const setApproverRoles = async (req, res, next) => {
         { $set: { role: "approver", isApprover: true } },
       );
       approverRoleCount = updateResult.modifiedCount;
-
-      console.log(
-        `[SET APPROVER ROLES] matchedCount: ${updateResult.matchedCount}`,
-      );
-      console.log(
-        `[SET APPROVER ROLES] modifiedCount: ${updateResult.modifiedCount}`,
-      );
     }
 
-    console.log("[SET APPROVER ROLES] Complete!");
 
     res.status(200).json({
       success: true,
@@ -901,7 +873,6 @@ export const getMyApprovals = async (req, res, next) => {
     if (!approverId || approverId === "undefined" || approverId === "null") {
       return next(new AppError("Approver ID is required", 400));
     }
-    console.log(approverId, "approverId");
     // Helper to get common populates
     const commonPopulates = [
       { path: "branch", select: "branchCode branchName location" },
@@ -934,12 +905,15 @@ export const getMyApprovals = async (req, res, next) => {
         path: "approvalStatus.level5.approvedBy",
         select: "firstName lastName employeeId",
       },
+      {
+        path: "branch",
+        select: "branchCode branchName location",
+      },
     ];
 
-    // Level 1: Only employees where this user is Level 1 approver and it's pending
+    // Level 1: Employees where this user is Level 1 approver
     const level1Employees = await Employee.find({
       level1Approver: approverId,
-      "approvalStatus.level1.status": "pending",
       isActive: true,
       _id: { $ne: approverId },
     })
@@ -947,11 +921,10 @@ export const getMyApprovals = async (req, res, next) => {
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
 
-    // Level 2: Only employees where this user is Level 2 approver and it's pending
+    // Level 2: Employees where this user is Level 2 approver
     const level2Employees = await Employee.find({
       level2Approver: approverId,
       level1Approver: { $ne: approverId },
-      "approvalStatus.level2.status": "pending",
       isActive: true,
       _id: { $ne: approverId },
     })
@@ -959,12 +932,11 @@ export const getMyApprovals = async (req, res, next) => {
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
 
-    // Level 3: Only employees where this user is Level 3 approver and it's pending
+    // Level 3: Employees where this user is Level 3 approver
     const level3Employees = await Employee.find({
       level3Approver: approverId,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
-      "approvalStatus.level3.status": "pending",
       isActive: true,
       _id: { $ne: approverId },
     })
@@ -972,13 +944,12 @@ export const getMyApprovals = async (req, res, next) => {
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
 
-    // Level 4: Only employees where this user is Level 4 approver and it's pending
+    // Level 4: Employees where this user is Level 4 approver
     const level4Employees = await Employee.find({
       level4Approver: approverId,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       level3Approver: { $ne: approverId },
-      "approvalStatus.level4.status": "pending",
       isActive: true,
       _id: { $ne: approverId },
     })
@@ -986,37 +957,19 @@ export const getMyApprovals = async (req, res, next) => {
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
 
-    // Level 5: Only employees where this user is Level 5 approver and it's pending
+    // Level 5: Employees where this user is Level 5 approver
     const level5Employees = await Employee.find({
       level5Approver: approverId,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       level3Approver: { $ne: approverId },
       level4Approver: { $ne: approverId },
-      "approvalStatus.level5.status": "pending",
       isActive: true,
       _id: { $ne: approverId },
     })
       .select("-password")
       .populate(commonPopulates)
       .sort({ employeeId: 1 });
-
-    console.log({
-      data: {
-        level1: level1Employees,
-        level2: level2Employees,
-        level3: level3Employees,
-        level4: level4Employees,
-        level5: level5Employees,
-      },
-      counts: {
-        level1: level1Employees.length,
-        level2: level2Employees.length,
-        level3: level3Employees.length,
-        level4: level4Employees.length,
-        level5: level5Employees.length,
-      },
-    });
 
     res.status(200).json({
       success: true,

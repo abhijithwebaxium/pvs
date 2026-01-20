@@ -1,6 +1,10 @@
-import Branch from '../models/Branch.js';
-import AppError from '../utils/appError.js';
+import Branch from "../models/Branch.js";
+import Employee from "../models/Employee.js";
+import AppError from "../utils/appError.js";
 
+// @desc    Get all branches
+// @route   GET /api/branches
+// @access  Private
 // @desc    Get all branches
 // @route   GET /api/branches
 // @access  Private
@@ -10,19 +14,39 @@ export const getBranches = async (req, res, next) => {
     const filter = {};
 
     if (isActive !== undefined) {
-      filter.isActive = isActive === 'true';
+      filter.isActive = isActive === "true";
     }
 
     const branches = await Branch.find(filter)
-      .populate('manager', 'firstName lastName employeeId')
+      .populate("manager", "firstName lastName employeeId")
       .sort({ branchCode: 1 });
+
+    // Get employee counts for all branches in one aggregation
+    let employeeCounts = [];
+
+    // Create a map for quick lookup
+    const countMap = {};
+    employeeCounts.forEach((item) => {
+      if (item._id) {
+        countMap[item._id.toString()] = item.total;
+      }
+    });
+
+    const branchesWithCount = branches.map((branch) => {
+      return {
+        ...branch.toObject(),
+        employeeCount: countMap[branch._id.toString()] || 0,
+      };
+    });
+
 
     res.status(200).json({
       success: true,
-      count: branches.length,
-      data: branches,
+      count: branchesWithCount.length,
+      data: branchesWithCount,
     });
   } catch (error) {
+    console.error("getBranches Critical Error:", error);
     next(error);
   }
 };
@@ -33,12 +57,12 @@ export const getBranches = async (req, res, next) => {
 export const getBranch = async (req, res, next) => {
   try {
     const branch = await Branch.findById(req.params.id).populate(
-      'manager',
-      'firstName lastName employeeId email phone'
+      "manager",
+      "firstName lastName employeeId email phone",
     );
 
     if (!branch) {
-      return next(new AppError('Branch not found', 404));
+      return next(new AppError("Branch not found", 404));
     }
 
     res.status(200).json({
@@ -59,12 +83,12 @@ export const createBranch = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Branch created successfully',
+      message: "Branch created successfully",
       data: branch,
     });
   } catch (error) {
     if (error.code === 11000) {
-      return next(new AppError('Branch code already exists', 400));
+      return next(new AppError("Branch code already exists", 400));
     }
     next(error);
   }
@@ -75,22 +99,18 @@ export const createBranch = async (req, res, next) => {
 // @access  Private (Admin/HR only)
 export const updateBranch = async (req, res, next) => {
   try {
-    const branch = await Branch.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate('manager', 'firstName lastName employeeId');
+    const branch = await Branch.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    }).populate("manager", "firstName lastName employeeId");
 
     if (!branch) {
-      return next(new AppError('Branch not found', 404));
+      return next(new AppError("Branch not found", 404));
     }
 
     res.status(200).json({
       success: true,
-      message: 'Branch updated successfully',
+      message: "Branch updated successfully",
       data: branch,
     });
   } catch (error) {
@@ -106,12 +126,12 @@ export const deleteBranch = async (req, res, next) => {
     const branch = await Branch.findByIdAndDelete(req.params.id);
 
     if (!branch) {
-      return next(new AppError('Branch not found', 404));
+      return next(new AppError("Branch not found", 404));
     }
 
     res.status(200).json({
       success: true,
-      message: 'Branch deleted successfully',
+      message: "Branch deleted successfully",
       data: {},
     });
   } catch (error) {
@@ -127,7 +147,7 @@ export const toggleBranchStatus = async (req, res, next) => {
     const branch = await Branch.findById(req.params.id);
 
     if (!branch) {
-      return next(new AppError('Branch not found', 404));
+      return next(new AppError("Branch not found", 404));
     }
 
     branch.isActive = !branch.isActive;
@@ -135,7 +155,7 @@ export const toggleBranchStatus = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Branch ${branch.isActive ? 'activated' : 'deactivated'} successfully`,
+      message: `Branch ${branch.isActive ? "activated" : "deactivated"} successfully`,
       data: branch,
     });
   } catch (error) {

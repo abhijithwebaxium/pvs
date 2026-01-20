@@ -316,13 +316,13 @@ const Employees = () => {
 
             {/* Action Buttons - Push to the right */}
             <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>
-              <Button
+              {/* <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleAddEmployee}
               >
                 Add Employee
-              </Button>
+              </Button> */}
               <Button
                 variant="contained"
                 startIcon={<CloudUploadIcon />}
