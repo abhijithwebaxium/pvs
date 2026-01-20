@@ -106,6 +106,23 @@ const HRDashboard = ({ user }) => {
     setFilteredEmployees(filtered);
   }, [searchQuery, selectedBranch, selectedRole, selectedStatus, employees]);
 
+  // Calculate approval completion stats
+  const totalEmployees = filteredEmployees.length;
+  const fullyApprovedCount = filteredEmployees.filter((emp) => {
+    // Check if all 5 levels are approved
+    for (let i = 1; i <= 5; i++) {
+      const approver = emp[`level${i}Approver`];
+      if (approver) {
+        const status = emp.approvalStatus?.[`level${i}`]?.status;
+        if (status !== "approved") {
+          return false;
+        }
+      }
+    }
+    // Employee must have at least one approver assigned
+    return emp.level1Approver || emp.level2Approver || emp.level3Approver || emp.level4Approver || emp.level5Approver;
+  }).length;
+
   const columns = [
     {
       field: "slNo",
@@ -173,31 +190,91 @@ const HRDashboard = ({ user }) => {
       field: "level1ApproverName",
       headerName: "Approver 1",
       width: 160,
-      renderCell: (params) => params.value || "Not Assigned",
+      renderCell: (params) => {
+        const approverName = params.value || "Not Assigned";
+        const status = params.row.approvalStatus?.level1?.status;
+        const color =
+          status === "approved"
+            ? "success.main"
+            : status === "rejected"
+              ? "error.main"
+              : "text.primary";
+        return (
+          <Typography sx={{ color, mt: 1 }}>{approverName}</Typography>
+        );
+      },
     },
     {
       field: "level2ApproverName",
       headerName: "Approver 2",
       width: 160,
-      renderCell: (params) => params.value || "Not Assigned",
+      renderCell: (params) => {
+        const approverName = params.value || "Not Assigned";
+        const status = params.row.approvalStatus?.level2?.status;
+        const color =
+          status === "approved"
+            ? "success.main"
+            : status === "rejected"
+              ? "error.main"
+              : "text.primary";
+        return (
+          <Typography sx={{ color, mt: 1 }}>{approverName}</Typography>
+        );
+      },
     },
     {
       field: "level3ApproverName",
       headerName: "Approver 3",
       width: 160,
-      renderCell: (params) => params.value || "Not Assigned",
+      renderCell: (params) => {
+        const approverName = params.value || "Not Assigned";
+        const status = params.row.approvalStatus?.level3?.status;
+        const color =
+          status === "approved"
+            ? "success.main"
+            : status === "rejected"
+              ? "error.main"
+              : "text.primary";
+        return (
+          <Typography sx={{ color, mt: 1 }}>{approverName}</Typography>
+        );
+      },
     },
     {
       field: "level4ApproverName",
       headerName: "Approver 4",
       width: 160,
-      renderCell: (params) => params.value || "Not Assigned",
+      renderCell: (params) => {
+        const approverName = params.value || "Not Assigned";
+        const status = params.row.approvalStatus?.level4?.status;
+        const color =
+          status === "approved"
+            ? "success.main"
+            : status === "rejected"
+              ? "error.main"
+              : "text.primary";
+        return (
+          <Typography sx={{ color, mt: 1 }}>{approverName}</Typography>
+        );
+      },
     },
     {
       field: "level5ApproverName",
       headerName: "Approver 5",
       width: 160,
-      renderCell: (params) => params.value || "Not Assigned",
+      renderCell: (params) => {
+        const approverName = params.value || "Not Assigned";
+        const status = params.row.approvalStatus?.level5?.status;
+        const color =
+          status === "approved"
+            ? "success.main"
+            : status === "rejected"
+              ? "error.main"
+              : "text.primary";
+        return (
+          <Typography sx={{ color, mt: 1 }}>{approverName}</Typography>
+        );
+      },
     },
   ];
 
@@ -357,10 +434,6 @@ const HRDashboard = ({ user }) => {
         </Grid>
       </Grid>
 
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
-        Employees
-      </Typography>
-
       <Paper
         sx={{
           width: "100%",
@@ -372,77 +445,98 @@ const HRDashboard = ({ user }) => {
           mb: 4,
         }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
           <Box
             sx={{
               display: "flex",
-              gap: 2,
-              flexWrap: "wrap",
+              justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
+              gap: 2,
             }}
           >
-            {/* Search Bar */}
-            <TextField
-              size="small"
-              placeholder="Search employees..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ minWidth: 250 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
+            {/* Table Header */}
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
+                Employees
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {fullyApprovedCount}/{totalEmployees} employee's approval has been completed
+              </Typography>
+            </Box>
+
+            {/* Filters Container */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                alignItems: "center",
               }}
-            />
-
-            {/* Branch Filter */}
-            <TextField
-              select
-              size="small"
-              label="Branch"
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              sx={{ minWidth: 200 }}
             >
-              <MenuItem value="">All Branches</MenuItem>
-              {branches.map((branch) => (
-                <MenuItem key={branch._id} value={branch._id}>
-                  {branch.branchCode} - {branch.branchName}
-                </MenuItem>
-              ))}
-            </TextField>
+              {/* Search Bar */}
+              <TextField
+                size="small"
+                placeholder="Search employees..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ minWidth: 250 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-            {/* Role Filter */}
-            <TextField
-              select
-              size="small"
-              label="Role"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              sx={{ minWidth: 150 }}
-            >
-              <MenuItem value="">All Roles</MenuItem>
-              <MenuItem value="employee">Employee</MenuItem>
-              <MenuItem value="approver">Approver</MenuItem>
-              <MenuItem value="hr">HR</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-            </TextField>
+              {/* Branch Filter */}
+              <TextField
+                select
+                size="small"
+                label="Branch"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Branches</MenuItem>
+                {branches.map((branch) => (
+                  <MenuItem key={branch._id} value={branch._id}>
+                    {branch.branchCode} - {branch.branchName}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-            {/* Status Filter */}
-            <TextField
-              select
-              size="small"
-              label="Status"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              sx={{ minWidth: 130 }}
-            >
-              <MenuItem value="">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </TextField>
+              {/* Role Filter */}
+              <TextField
+                select
+                size="small"
+                label="Role"
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                sx={{ minWidth: 150 }}
+              >
+                <MenuItem value="">All Roles</MenuItem>
+                <MenuItem value="employee">Employee</MenuItem>
+                <MenuItem value="approver">Approver</MenuItem>
+                <MenuItem value="hr">HR</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </TextField>
+
+              {/* Status Filter */}
+              <TextField
+                select
+                size="small"
+                label="Status"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                sx={{ minWidth: 130 }}
+              >
+                <MenuItem value="">All Status</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </TextField>
+            </Box>
           </Box>
         </Box>
 

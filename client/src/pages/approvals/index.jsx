@@ -29,12 +29,14 @@ import InfoIcon from "@mui/icons-material/Info";
 import SearchIcon from "@mui/icons-material/Search";
 import { MenuItem, InputAdornment } from "@mui/material";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { selectUser } from "../../store/slices/userSlice";
 import api from "../../utils/api";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 const Approvals = () => {
   const user = useSelector(selectUser);
+  const navigate = useNavigate();
   const [approvalsData, setApprovalsData] = useState({
     level1: [],
     level2: [],
@@ -311,22 +313,22 @@ const Approvals = () => {
     {
       field: "employeeId",
       headerName: "Employee ID",
-      width: 130,
-      flex: 0.6,
+      minWidth: 110,
+      flex: 1,
     },
     {
       field: "name",
       headerName: "Name",
-      width: 250,
-      flex: 1.2,
+      minWidth: 200,
+      flex: 1,
       valueGetter: (params, row) =>
         `${row.firstName || ""} ${row.lastName || ""}`.trim(),
     },
     {
       field: "bonus2024",
       headerName: "Bonus 2024",
-      width: 120,
-      flex: 0.6,
+      minWidth: 110,
+      flex: 1,
       renderCell: (params) => {
         const bonus = params.row.bonus2024 || 0;
         return `$${bonus.toLocaleString()}`;
@@ -335,7 +337,7 @@ const Approvals = () => {
     {
       field: "bonus2025",
       headerName: "Bonus 2025",
-      width: 120,
+      minWidth: 110,
       flex: 0.6,
       renderCell: (params) => {
         const bonus = params.row.bonus2025 || 0;
@@ -345,7 +347,7 @@ const Approvals = () => {
     {
       field: "branch",
       headerName: "Branch",
-      width: 180,
+      minWidth: 140,
       flex: 1,
       renderCell: (params) => {
         const branch = params.row.branch;
@@ -357,28 +359,28 @@ const Approvals = () => {
     {
       field: "supervisorName",
       headerName: "Supervisor",
-      width: 180,
+      minWidth: 150,
       flex: 1,
       renderCell: (params) => params.value || "Not Assigned",
     },
     {
       field: "salaryType",
       headerName: "Salary Type",
-      width: 130,
+      minWidth: 110,
       flex: 0.8,
       renderCell: (params) => params.value || "N/A",
     },
     {
       field: "annualSalary",
       headerName: "Annual Salary",
-      width: 150,
+      minWidth: 110,
       flex: 0.8,
       renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
     },
     {
       field: "hourlyPayRate",
       headerName: "Hourly Rate",
-      width: 130,
+      minWidth: 110,
       flex: 0.8,
       renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
     },
@@ -388,8 +390,8 @@ const Approvals = () => {
   const getLevelColumn = (level) => ({
     field: `approvalStatus.level${level}.status`,
     headerName: `Level ${level} (Approver)`,
-    width: 160,
-    flex: 1,
+    minWidth: 260,
+    flex: 1.5,
     renderCell: (params) => {
       const status =
         params.row.approvalStatus?.[`level${level}`]?.status || "pending";
@@ -541,7 +543,7 @@ const Approvals = () => {
     ? {
         field: "previousLevelApprover",
         headerName: "Previous Level Approver",
-        width: 200,
+        minWidth: 160,
         flex: 1,
         renderCell: (params) => {
           const currentLevel = params.row.currentPendingLevel;
@@ -610,7 +612,7 @@ const Approvals = () => {
     {
       field: "approverLevel",
       headerName: "Approver Level",
-      width: 170,
+      minWidth: 170,
       flex: 0.8,
       renderCell: (params) => {
         const currentLevel = params.row.currentPendingLevel;
@@ -732,7 +734,7 @@ const Approvals = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 120,
+      minWidth: 120,
       flex: 0.6,
       sortable: false,
       renderCell: (params) => {
@@ -885,6 +887,11 @@ const Approvals = () => {
     return statusMatch;
   });
 
+  // Count employees without bonus allocation
+  const employeesWithoutBonus = mergedRows.filter(
+    (row) => !row.approvalStatus?.enteredBy,
+  ).length;
+
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Box
@@ -904,6 +911,26 @@ const Approvals = () => {
           </Button>
         )}
       </Box>
+
+      {/* Bonus Allocation Message */}
+      {employeesWithoutBonus > 0 && (
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          You have <strong>{employeesWithoutBonus}</strong> employee
+          {employeesWithoutBonus !== 1 ? "s" : ""} awaiting bonus allocation.{" "}
+          <Box
+            component="span"
+            sx={{
+              color: "primary.main",
+              cursor: "pointer",
+              "&:hover": { textDecoration: "underline" },
+            }}
+            onClick={() => navigate("/bonuses")}
+          >
+            Click here
+          </Box>{" "}
+          to assign their bonus so that they can be sent for review.
+        </Typography>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -1042,6 +1069,10 @@ const Approvals = () => {
                     filterStatus === "pending"
                       ? "warning.contrastText"
                       : "warning.main",
+                  p: 2,
+                  "& .MuiChip-label": {
+                    fontSize: 13,
+                  },
                 }}
               />
               <Chip
@@ -1062,6 +1093,11 @@ const Approvals = () => {
                     filterStatus === "approved"
                       ? "success.contrastText"
                       : "success.main",
+                  p: 2,
+
+                  "& .MuiChip-label": {
+                    fontSize: 13,
+                  },
                 }}
               />
               <Chip
@@ -1082,6 +1118,10 @@ const Approvals = () => {
                     filterStatus === "rejected"
                       ? "error.contrastText"
                       : "error.main",
+                  p: 2,
+                  "& .MuiChip-label": {
+                    fontSize: 13,
+                  },
                 }}
               />
             </Box>
