@@ -31,7 +31,7 @@ import { MenuItem, InputAdornment } from "@mui/material";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/userSlice";
 import api from "../../utils/api";
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 const Approvals = () => {
   const user = useSelector(selectUser);
@@ -558,7 +558,6 @@ const Approvals = () => {
             "pending";
           const prevApproverName = params.row[`level${prevLevel}ApproverName`];
 
-
           return (
             <Box
               sx={{
@@ -577,10 +576,10 @@ const Approvals = () => {
                   label="Pending"
                   size="small"
                   sx={{
-                    bgcolor: "#ffd60a",
-                    color: "#000",
+                    bgcolor: "#fff1abff",
+                    color: "#ffd60a",
                     fontWeight: "bold",
-                    "& .MuiChip-icon": { color: "#000" },
+                    "& .MuiChip-icon": { color: "#795301ff" },
                   }}
                   icon={<HourglassEmptyIcon />}
                 />
@@ -598,7 +597,6 @@ const Approvals = () => {
               )}
             </Box>
           );
-
         },
       }
     : null;
@@ -857,6 +855,7 @@ const Approvals = () => {
   // 2. Determine Counts from the "Pool"
   let totalPending = 0;
   let totalApproved = 0;
+  let totalRejected = 0;
 
   baseFilteredRows.forEach((row) => {
     const status =
@@ -864,7 +863,9 @@ const Approvals = () => {
       "pending";
     if (status === "approved") {
       totalApproved++;
-    } else if (status !== "rejected") {
+    } else if (status === "rejected") {
+      totalRejected++;
+    } else {
       totalPending++;
     }
   });
@@ -879,6 +880,7 @@ const Approvals = () => {
       if (filterStatus === "pending")
         statusMatch = status !== "approved" && status !== "rejected";
       if (filterStatus === "approved") statusMatch = status === "approved";
+      if (filterStatus === "rejected") statusMatch = status === "rejected";
     }
     return statusMatch;
   });
@@ -1017,83 +1019,11 @@ const Approvals = () => {
             bgcolor: "background.paper", // Ensure background color
           }}
         >
-          <Typography variant="h6" component="div">
-            Approval Requests
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            {/* Search Bar */}
-            <TextField
-              size="small"
-              placeholder="Search employees..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ minWidth: 250 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Branch Filter */}
-            <TextField
-              select
-              size="small"
-              label="Branch"
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="">All Branches</MenuItem>
-              {branches.map((branch) => (
-                <MenuItem key={branch._id} value={branch._id}>
-                  {branch.branchCode} - {branch.branchName}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            {/* Role Filter */}
-            <TextField
-              select
-              size="small"
-              label="Role"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              sx={{ minWidth: 150 }}
-            >
-              <MenuItem value="">All Roles</MenuItem>
-              <MenuItem value="employee">Employee</MenuItem>
-              <MenuItem value="approver">Approver</MenuItem>
-              <MenuItem value="hr">HR</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-            </TextField>
-
-            {/* Supervisor Filter */}
-            <TextField
-              select
-              size="small"
-              label="Supervisor"
-              value={selectedSupervisor}
-              onChange={(e) => setSelectedSupervisor(e.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="">All Supervisors</MenuItem>
-              {uniqueSupervisors.map((name) => (
-                <MenuItem key={name} value={name}>
-                  {name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <Box>
+            <Typography variant="h4" component="div">
+              Approval Requests
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
               <Chip
                 icon={<PendingActionsIcon />}
                 label={`Pending: ${totalPending}`}
@@ -1134,7 +1064,103 @@ const Approvals = () => {
                       : "success.main",
                 }}
               />
+              <Chip
+                icon={<CancelIcon />}
+                label={`Rejected: ${totalRejected}`}
+                color={filterStatus === "rejected" ? "error" : "default"}
+                variant={filterStatus === "rejected" ? "filled" : "outlined"}
+                clickable
+                onClick={() =>
+                  setFilterStatus((prev) =>
+                    prev === "rejected" ? "all" : "rejected",
+                  )
+                }
+                sx={{
+                  fontWeight: "bold",
+                  borderColor: "error.main",
+                  color:
+                    filterStatus === "rejected"
+                      ? "error.contrastText"
+                      : "error.main",
+                }}
+              />
             </Box>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
+            <Typography variant="h6">Select supervisor:</Typography>
+            {/* Supervisor Filter */}
+            <TextField
+              select
+              size="small"
+              label="Supervisor"
+              value={selectedSupervisor}
+              onChange={(e) => setSelectedSupervisor(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">All Supervisors</MenuItem>
+              {uniqueSupervisors.map((name) => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {/* Branch Filter */}
+            <TextField
+              select
+              size="small"
+              label="Branch"
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">All Branches</MenuItem>
+              {branches.map((branch) => (
+                <MenuItem key={branch._id} value={branch._id}>
+                  {branch.branchCode} - {branch.branchName}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {/* Role Filter */}
+            <TextField
+              select
+              size="small"
+              label="Role"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              sx={{ minWidth: 150 }}
+            >
+              <MenuItem value="">All Roles</MenuItem>
+              <MenuItem value="employee">Employee</MenuItem>
+              <MenuItem value="approver">Approver</MenuItem>
+              <MenuItem value="hr">HR</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </TextField>
+
+            {/* Search Bar */}
+            <TextField
+              size="small"
+              placeholder="Search employees..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ minWidth: 250 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Box>
         </Box>
         {loading ? (
