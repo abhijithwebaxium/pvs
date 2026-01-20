@@ -37,6 +37,7 @@ const HRDashboard = ({ user }) => {
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedSupervisor, setSelectedSupervisor] = useState("");
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -103,8 +104,27 @@ const HRDashboard = ({ user }) => {
       filtered = filtered.filter((emp) => emp.isActive === isActive);
     }
 
+    // Supervisor filter
+    if (selectedSupervisor) {
+      filtered = filtered.filter((emp) => emp.supervisorName === selectedSupervisor);
+    }
+
     setFilteredEmployees(filtered);
-  }, [searchQuery, selectedBranch, selectedRole, selectedStatus, employees]);
+  }, [searchQuery, selectedBranch, selectedRole, selectedStatus, selectedSupervisor, employees]);
+
+  // Extract unique supervisors from all employees
+  const uniqueSupervisors = [
+    ...new Set(
+      employees.map((emp) => emp.supervisorName).filter((name) => name)
+    ),
+  ].sort();
+
+  // Calculate allocated bonus aggregate by selected supervisor
+  const allocatedBonusAggregate = selectedSupervisor
+    ? employees
+        .filter((emp) => emp.supervisorName === selectedSupervisor)
+        .reduce((sum, emp) => sum + (parseFloat(emp.bonus2025) || 0), 0)
+    : 0;
 
   // Calculate approval completion stats
   const totalEmployees = filteredEmployees.length;
@@ -155,6 +175,12 @@ const HRDashboard = ({ user }) => {
           ? `${branch.branchCode} - ${branch.branchName}`
           : "Not Assigned";
       },
+    },
+    {
+      field: "supervisorName",
+      headerName: "Supervisor",
+      width: 180,
+      renderCell: (params) => params.value || "Not Assigned",
     },
     {
       field: "salaryType",
@@ -463,6 +489,9 @@ const HRDashboard = ({ user }) => {
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 {fullyApprovedCount}/{totalEmployees} employee's approval has been completed
               </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 500, color: "primary.main", mt: 0.5 }}>
+                Allocated Bonus Aggregate: ${allocatedBonusAggregate.toLocaleString()}
+              </Typography>
             </Box>
 
             {/* Filters Container */}
@@ -474,21 +503,22 @@ const HRDashboard = ({ user }) => {
                 alignItems: "center",
               }}
             >
-              {/* Search Bar */}
+              {/* Supervisor Filter */}
               <TextField
+                select
                 size="small"
-                placeholder="Search employees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ minWidth: 250 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+                label="Supervisor"
+                value={selectedSupervisor}
+                onChange={(e) => setSelectedSupervisor(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Supervisors</MenuItem>
+                {uniqueSupervisors.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </TextField>
 
               {/* Branch Filter */}
               <TextField
@@ -536,6 +566,22 @@ const HRDashboard = ({ user }) => {
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
               </TextField>
+
+             {/* Search Bar */}
+              <TextField
+                size="small"
+                placeholder="Search employees..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ minWidth: 250 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Box>
           </Box>
         </Box>
