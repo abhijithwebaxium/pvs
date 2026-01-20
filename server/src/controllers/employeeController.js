@@ -572,7 +572,6 @@ export const bulkCreateEmployees = async (req, res, next) => {
     // Update role to "approver" for all employees who are approvers
     let approverRoleCount = 0;
     if (approverIds.size > 0) {
-
       const updateResult = await Employee.updateMany(
         { _id: { $in: Array.from(approverIds) } },
         { $set: { role: "approver", isApprover: true } },
@@ -696,7 +695,6 @@ export const resetAndSyncApprovers = async (req, res, next) => {
 // @access  Private (Admin only)
 export const setApproverRoles = async (req, res, next) => {
   try {
-
     // Find all employees who are assigned as approvers
     const employeesWithApprovers = await Employee.find({
       $or: [
@@ -710,7 +708,6 @@ export const setApproverRoles = async (req, res, next) => {
       "level1Approver level2Approver level3Approver level4Approver level5Approver employeeId",
     );
 
-
     // Collect all unique approver IDs
     const approverIds = new Set();
     for (const emp of employeesWithApprovers) {
@@ -721,7 +718,6 @@ export const setApproverRoles = async (req, res, next) => {
       if (emp.level5Approver) approverIds.add(emp.level5Approver.toString());
     }
 
-
     // Update role to "approver" for all employees who are approvers
     let approverRoleCount = 0;
     if (approverIds.size > 0) {
@@ -731,7 +727,6 @@ export const setApproverRoles = async (req, res, next) => {
       );
       approverRoleCount = updateResult.modifiedCount;
     }
-
 
     res.status(200).json({
       success: true,
@@ -1109,56 +1104,57 @@ export const updateEmployeeBonus = async (req, res, next) => {
       enteredAt: new Date(),
     };
 
-    // Set status for each level based on whether approver exists
+    // Only set status for levels that have approvers assigned
     if (employee.level1Approver) {
       approvalStatusUpdate.level1 = { status: "pending" };
-    } else {
-      approvalStatusUpdate.level1 = { status: "not_required" };
     }
 
     if (employee.level2Approver) {
       approvalStatusUpdate.level2 = { status: "pending" };
-    } else {
-      approvalStatusUpdate.level2 = { status: "not_required" };
     }
 
     if (employee.level3Approver) {
       approvalStatusUpdate.level3 = { status: "pending" };
-    } else {
-      approvalStatusUpdate.level3 = { status: "not_required" };
     }
 
     if (employee.level4Approver) {
       approvalStatusUpdate.level4 = { status: "pending" };
-    } else {
-      approvalStatusUpdate.level4 = { status: "not_required" };
     }
 
     if (employee.level5Approver) {
       approvalStatusUpdate.level5 = { status: "pending" };
-    } else {
-      approvalStatusUpdate.level5 = { status: "not_required" };
     }
 
-    // Use dot notation for the update to ensure Mongoose treats them as separate paths
-    // and correctly applies defaults and validation for nested objects
+    // Build update query - only set fields for levels with approvers
     const updateQuery = {
       $set: {
         bonus2025: parseFloat(bonus2025),
         "approvalStatus.enteredBy": supervisorId,
         "approvalStatus.enteredAt": approvalStatusUpdate.enteredAt,
-        "approvalStatus.level1.status":
-          approvalStatusUpdate.level1?.status || "not_required",
-        "approvalStatus.level2.status":
-          approvalStatusUpdate.level2?.status || "not_required",
-        "approvalStatus.level3.status":
-          approvalStatusUpdate.level3?.status || "not_required",
-        "approvalStatus.level4.status":
-          approvalStatusUpdate.level4?.status || "not_required",
-        "approvalStatus.level5.status":
-          approvalStatusUpdate.level5?.status || "not_required",
       },
     };
+
+    // Only add status fields for levels that have approvers
+    if (approvalStatusUpdate.level1) {
+      updateQuery.$set["approvalStatus.level1.status"] =
+        approvalStatusUpdate.level1.status;
+    }
+    if (approvalStatusUpdate.level2) {
+      updateQuery.$set["approvalStatus.level2.status"] =
+        approvalStatusUpdate.level2.status;
+    }
+    if (approvalStatusUpdate.level3) {
+      updateQuery.$set["approvalStatus.level3.status"] =
+        approvalStatusUpdate.level3.status;
+    }
+    if (approvalStatusUpdate.level4) {
+      updateQuery.$set["approvalStatus.level4.status"] =
+        approvalStatusUpdate.level4.status;
+    }
+    if (approvalStatusUpdate.level5) {
+      updateQuery.$set["approvalStatus.level5.status"] =
+        approvalStatusUpdate.level5.status;
+    }
 
     const updatedEmployee = await Employee.findByIdAndUpdate(id, updateQuery, {
       new: true,
@@ -1231,8 +1227,9 @@ export const getMyBonusApprovals = async (req, res, next) => {
             return { level, approverId: employee[approverField] };
           }
 
-          // If not approved/not_required, approval is blocked at this level
-          if (status !== "approved" && status !== "not_required") {
+          // If status exists and is not approved, approval is blocked at this level
+          // undefined/null status means no approver exists for this level, so it's skipped
+          if (status && status !== "approved") {
             return null;
           }
         }
@@ -1357,8 +1354,9 @@ export const processBonusApproval = async (req, res, next) => {
             const prevLevelKey = `level${prevLevel}`;
             const prevStatus = employee.approvalStatus?.[prevLevelKey]?.status;
 
-            // Previous level must be approved or not_required
-            if (prevStatus !== "approved" && prevStatus !== "not_required") {
+            // Previous level must be approved, or have no status (no approver assigned)
+            // If status exists and is not approved, block the approval
+            if (prevStatus && prevStatus !== "approved") {
               canApprove = false;
               break;
             }

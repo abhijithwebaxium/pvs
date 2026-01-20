@@ -194,7 +194,7 @@ const EmployeeSchema = new Schema(
       level1: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected",],
+          enum: ["pending", "approved", "rejected"],
           default: "pending",
         },
         approvedBy: {
@@ -214,7 +214,7 @@ const EmployeeSchema = new Schema(
       level2: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected",],
+          enum: ["pending", "approved", "rejected"],
           default: "pending",
         },
         approvedBy: {
@@ -234,7 +234,7 @@ const EmployeeSchema = new Schema(
       level3: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected",],
+          enum: ["pending", "approved", "rejected"],
           default: "pending",
         },
         approvedBy: {
@@ -254,7 +254,7 @@ const EmployeeSchema = new Schema(
       level4: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected",],
+          enum: ["pending", "approved", "rejected"],
           default: "pending",
         },
         approvedBy: {
@@ -274,7 +274,7 @@ const EmployeeSchema = new Schema(
       level5: {
         status: {
           type: String,
-          enum: ["pending", "approved", "rejected",],
+          enum: ["pending", "approved", "rejected"],
           default: "pending",
         },
         approvedBy: {
