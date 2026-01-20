@@ -8,6 +8,7 @@ import Search from "./Search";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import { logout } from "../store/slices/userSlice";
 import api from "../utils/api";
 
@@ -50,7 +51,8 @@ export default function Header() {
         </MenuButton>
         <ColorModeIconDropdown />
         <MenuButton aria-label="logout" onClick={handleLogout}>
-          <LogoutRoundedIcon />
+          {/* <LogoutRoundedIcon /> */}
+    <PowerSettingsNewIcon sx={{ color: '#FF0000' }} />
         </MenuButton>
       </Stack>
     </Stack>

@@ -31,6 +31,7 @@ import { MenuItem, InputAdornment } from "@mui/material";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../store/slices/userSlice";
 import api from "../../utils/api";
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 const Approvals = () => {
   const user = useSelector(selectUser);
@@ -353,6 +354,34 @@ const Approvals = () => {
           : "Not Assigned";
       },
     },
+    {
+      field: "supervisorName",
+      headerName: "Supervisor",
+      width: 180,
+      flex: 1,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+    {
+      field: "salaryType",
+      headerName: "Salary Type",
+      width: 130,
+      flex: 0.8,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "annualSalary",
+      headerName: "Annual Salary",
+      width: 150,
+      flex: 0.8,
+      renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
+    },
+    {
+      field: "hourlyPayRate",
+      headerName: "Hourly Rate",
+      width: 130,
+      flex: 0.8,
+      renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
+    },
   ];
 
   // Helper to create Level Approver columns consistently
@@ -505,52 +534,74 @@ const Approvals = () => {
 
   // Determine if we need the Previous Level Approver column
   // Check if there are any rows with level > 1
-  const hasHigherLevels = mergedRows.some(row => row.currentPendingLevel > 1);
+  const hasHigherLevels = mergedRows.some((row) => row.currentPendingLevel > 1);
 
   // Previous Level Approver Column (only shown if there are approvals at level 2+)
-  const previousLevelColumn = hasHigherLevels ? {
-    field: "previousLevelApprover",
-    headerName: "Previous Level Approver",
-    width: 200,
-    flex: 1,
-    renderCell: (params) => {
-      const currentLevel = params.row.currentPendingLevel;
+  const previousLevelColumn = hasHigherLevels
+    ? {
+        field: "previousLevelApprover",
+        headerName: "Previous Level Approver",
+        width: 200,
+        flex: 1,
+        renderCell: (params) => {
+          const currentLevel = params.row.currentPendingLevel;
 
-      // If level 1, this shouldn't show, but just in case
-      if (currentLevel === 1) {
-        return null;
-      }
+          // If level 1, this shouldn't show, but just in case
+          if (currentLevel === 1) {
+            return null;
+          }
 
-      // Get previous level
-      const prevLevel = currentLevel - 1;
-      const prevStatus =
-        params.row.approvalStatus?.[`level${prevLevel}`]?.status || "pending";
-      const prevApproverName = params.row[`level${prevLevel}ApproverName`];
+          // Get previous level
+          const prevLevel = currentLevel - 1;
+          const prevStatus =
+            params.row.approvalStatus?.[`level${prevLevel}`]?.status ||
+            "pending";
+          const prevApproverName = params.row[`level${prevLevel}ApproverName`];
 
-      return (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            gap: 0.5,
-            py: 1,
-          }}
-        >
-          {getStatusChip(prevStatus)}
-          {prevApproverName && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontSize: "0.7rem", lineHeight: 1 }}
+
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: 0.5,
+                p: 1,
+                width: "100%",
+                height: "100%",
+                borderRadius: 1,
+              }}
             >
-              {prevApproverName}
-            </Typography>
-          )}
-        </Box>
-      );
-    },
-  } : null;
+              {prevStatus === "pending" ? (
+                <Chip
+                  label="Pending"
+                  size="small"
+                  sx={{
+                    bgcolor: "#ffd60a",
+                    color: "#000",
+                    fontWeight: "bold",
+                    "& .MuiChip-icon": { color: "#000" },
+                  }}
+                  icon={<HourglassEmptyIcon />}
+                />
+              ) : (
+                getStatusChip(prevStatus)
+              )}
+              {prevApproverName && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.7rem", lineHeight: 1 }}
+                >
+                  {prevApproverName}
+                </Typography>
+              )}
+            </Box>
+          );
+
+        },
+      }
+    : null;
 
   // Create unified columns
   const unifiedColumns = [
