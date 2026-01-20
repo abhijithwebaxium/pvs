@@ -11,6 +11,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import { logout } from "../store/slices/userSlice";
 import api from "../utils/api";
+import Tooltip from '@mui/material/Tooltip';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -50,10 +51,11 @@ export default function Header() {
           <NotificationsRoundedIcon />
         </MenuButton>
         <ColorModeIconDropdown />
+           <Tooltip title="Logout">
         <MenuButton aria-label="logout" onClick={handleLogout}>
-          {/* <LogoutRoundedIcon /> */}
     <PowerSettingsNewIcon sx={{ color: '#FF0000' }} />
         </MenuButton>
+           </Tooltip>
       </Stack>
     </Stack>
   );
