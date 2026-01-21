@@ -137,33 +137,38 @@ const Employees = () => {
 
   const columns = [
     {
-      field: "employeeId",
-      headerName: "Employee ID",
-      width: 130,
-      flex: 0.6,
+      field: "slNo",
+      headerName: "Sl No",
+      width: 80,
+      minWidth: 80,
+      flex: 0.4,
+      renderCell: (params) => {
+        const index = filteredEmployees.findIndex((emp) => emp._id === params.row._id);
+        return index + 1;
+      },
     },
     {
-      field: "firstName",
-      headerName: "First Name",
-      width: 150,
-      flex: 0.8,
-    },
-    {
-      field: "lastName",
-      headerName: "Last Name",
-      width: 150,
-      flex: 0.8,
-    },
-    {
-      field: "email",
-      headerName: "Email",
+      field: "name",
+      headerName: "Name",
       width: 200,
-      flex: 1.2,
+      minWidth: 150,
+      flex: 1,
+      valueGetter: (params, row) =>
+        `${row.firstName || ""} ${row.lastName || ""}`.trim(),
+    },
+    {
+      field: "jobTitle",
+      headerName: "Job Title",
+      width: 180,
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "branch",
       headerName: "Branch",
       width: 180,
+      minWidth: 150,
       flex: 1,
       renderCell: (params) => {
         const branch = params.row.branch;
@@ -173,16 +178,48 @@ const Employees = () => {
       },
     },
     {
-      field: "department",
-      headerName: "Department",
-      width: 150,
-      flex: 0.8,
+      field: "supervisorName",
+      headerName: "Supervisor",
+      width: 180,
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "Not Assigned",
+    },
+    {
+      field: "salaryType",
+      headerName: "Salary Type",
+      width: 130,
+      minWidth: 120,
+      flex: 0.7,
       renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "annualSalary",
+      headerName: "Annual Salary",
+      width: 150,
+      minWidth: 130,
+      flex: 0.8,
+      renderCell: (params) => {
+        const salary = params.value || 0;
+        return salary > 0 ? `$${salary.toLocaleString()}` : "N/A";
+      },
+    },
+    {
+      field: "hourlyPayRate",
+      headerName: "Hourly Rate",
+      width: 130,
+      minWidth: 120,
+      flex: 0.7,
+      renderCell: (params) => {
+        const rate = params.value || 0;
+        return rate > 0 ? `$${rate.toFixed(2)}` : "N/A";
+      },
     },
     {
       field: "role",
       headerName: "Role",
       width: 120,
+      minWidth: 100,
       flex: 0.6,
       renderCell: (params) => (
         <Box
@@ -200,16 +237,10 @@ const Employees = () => {
       ),
     },
     {
-      field: "phone",
-      headerName: "Phone",
-      width: 150,
-      flex: 0.8,
-      renderCell: (params) => params.value || "N/A",
-    },
-    {
       field: "isActive",
       headerName: "Status",
       width: 120,
+      minWidth: 100,
       flex: 0.5,
       renderCell: (params) => (
         <Box

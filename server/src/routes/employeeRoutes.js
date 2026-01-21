@@ -20,10 +20,53 @@ import {
   processBonusApproval,
 } from "../controllers/employeeController.js";
 import { protect, authorize } from "../middlewares/auth.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
 router.use(protect); // All routes are protected
+
+// Download Excel template route (before other routes)
+router.get("/template/download", authorize(["hr", "admin"]), async (req, res) => {
+  try {
+    console.log("Template download route hit");
+    console.log("__dirname:", __dirname);
+    const templatePath = path.join(__dirname, "../../employee excel template.xlsx");
+    console.log("Template path:", templatePath);
+
+    // Check if file exists
+    const fs = await import('fs');
+    if (!fs.existsSync(templatePath)) {
+      console.error("Template file not found at:", templatePath);
+      return res.status(404).json({
+        success: false,
+        message: "Template file not found",
+      });
+    }
+
+    res.download(templatePath, "employee_template.xlsx", (err) => {
+      if (err) {
+        console.error("Error downloading template:", err);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: "Error downloading template file",
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error in template download:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error downloading template file",
+    });
+  }
+});
 
 // HR and Admin can view all employees and create new ones
 router

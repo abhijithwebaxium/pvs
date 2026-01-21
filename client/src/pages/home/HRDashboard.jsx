@@ -154,16 +154,17 @@ const HRDashboard = ({ user }) => {
       },
     },
     {
-      field: "employeeId",
-      headerName: "Employee ID",
-      width: 120,
-    },
-    {
       field: "fullName",
       headerName: "Name",
       width: 220,
       valueGetter: (params, row) =>
         `${row.firstName || ""} ${row.lastName || ""}`,
+    },
+    {
+      field: "jobTitle",
+      headerName: "Job Title",
+      width: 180,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "branch",

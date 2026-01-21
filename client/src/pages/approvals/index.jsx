@@ -311,10 +311,15 @@ const Approvals = () => {
   // Base columns that are common across all levels
   const baseColumns = [
     {
-      field: "employeeId",
-      headerName: "Employee ID",
-      minWidth: 110,
-      flex: 1,
+      field: "slNo",
+      headerName: "Sl No",
+      width: 80,
+      minWidth: 80,
+      flex: 0.4,
+      renderCell: (params) => {
+        const index = filteredRows.findIndex((emp) => emp.uniqueId === params.row.uniqueId);
+        return index + 1;
+      },
     },
     {
       field: "name",
@@ -323,6 +328,13 @@ const Approvals = () => {
       flex: 1,
       valueGetter: (params, row) =>
         `${row.firstName || ""} ${row.lastName || ""}`.trim(),
+    },
+    {
+      field: "jobTitle",
+      headerName: "Job Title",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "bonus2024",
@@ -382,7 +394,10 @@ const Approvals = () => {
       headerName: "Hourly Rate",
       minWidth: 110,
       flex: 0.8,
-      renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
+      renderCell: (params) => {
+        const rate = params.value || 0;
+        return rate > 0 ? `$${rate.toFixed(2)}` : "N/A";
+      },
     },
   ];
 
@@ -892,6 +907,16 @@ const Approvals = () => {
     (row) => !row.approvalStatus?.enteredBy,
   ).length;
 
+  // Calculate bonus aggregates from filtered rows
+  const bonus2024Aggregate = filteredRows.reduce(
+    (sum, row) => sum + (parseFloat(row.bonus2024) || 0),
+    0
+  );
+  const bonus2025Aggregate = filteredRows.reduce(
+    (sum, row) => sum + (parseFloat(row.bonus2025) || 0),
+    0
+  );
+
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Box
@@ -938,99 +963,7 @@ const Approvals = () => {
         </Alert>
       )}
 
-      {/* Summary Cards */}
-      {/* <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
-          <Card
-            onClick={() =>
-              setFilterStatus(filterStatus === "pending" ? "all" : "pending")
-            }
-            sx={{
-              height: "100%",
-              width: "100%",
-              bgcolor: "warning.light",
-              color: "warning.contrastText",
-              cursor: "pointer",
-              transition: "transform 0.2s, box-shadow 0.2s",
-              border: filterStatus === "pending" ? "3px solid" : "none",
-              borderColor: "warning.dark",
-              "&:hover": {
-                transform: "translateY(-4px)",
-                boxShadow: (theme) => theme.shadows[4],
-              },
-            }}
-          >
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="h4"
-                    component="div"
-                    sx={{ fontWeight: "bold" }}
-                  >
-                    {totalPending}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    Pending Approvals
-                  </Typography>
-                </Box>
-                <PendingActionsIcon sx={{ fontSize: 60, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card
-            onClick={() =>
-              setFilterStatus(filterStatus === "approved" ? "all" : "approved")
-            }
-            sx={{
-              height: "100%",
-              width: "100%",
-              bgcolor: "success.light",
-              color: "success.contrastText",
-              cursor: "pointer",
-              transition: "transform 0.2s, box-shadow 0.2s",
-              border: filterStatus === "approved" ? "3px solid" : "none",
-              borderColor: "success.dark",
-              "&:hover": {
-                transform: "translateY(-4px)",
-                boxShadow: (theme) => theme.shadows[4],
-              },
-            }}
-          >
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="h4"
-                    component="div"
-                    sx={{ fontWeight: "bold" }}
-                  >
-                    {totalApproved}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    Approved
-                  </Typography>
-                </Box>
-                <CheckCircleIcon sx={{ fontSize: 60, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid> */}
+
       {/* Approvals Table with Filters Header */}
       <Paper sx={{ width: "100%", mb: 2, overflow: "hidden" }}>
         <Box
@@ -1038,19 +971,16 @@ const Approvals = () => {
             p: 2,
             borderBottom: 1,
             borderColor: "divider",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 2,
-            bgcolor: "background.paper", // Ensure background color
+            bgcolor: "background.paper",
           }}
         >
-          <Box>
-            <Typography variant="h4" component="div">
-              Approval Requests
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
+          <Typography variant="h4" component="div" sx={{ mb: 2 }}>
+            Approval Requests
+          </Typography>
+
+          {/* Status Chips */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               <Chip
                 icon={<PendingActionsIcon />}
                 label={`Pending: ${totalPending}`}
@@ -1094,7 +1024,6 @@ const Approvals = () => {
                       ? "success.contrastText"
                       : "success.main",
                   p: 2,
-
                   "& .MuiChip-label": {
                     fontSize: 13,
                   },
@@ -1125,82 +1054,115 @@ const Approvals = () => {
                 }}
               />
             </Box>
+
+            {/* Bonus Aggregates */}
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>2024 Bonus Aggregate:</strong> ${bonus2024Aggregate.toLocaleString()}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>2025 Bonus Aggregate:</strong> ${bonus2025Aggregate.toLocaleString()}
+              </Typography>
+            </Box>
           </Box>
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 1 }}>
-            <Typography variant="h6">Select supervisor:</Typography>
-            {/* Supervisor Filter */}
-            <TextField
-              select
-              size="small"
-              label="Supervisor"
-              value={selectedSupervisor}
-              onChange={(e) => setSelectedSupervisor(e.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="">All Supervisors</MenuItem>
-              {uniqueSupervisors.map((name) => (
-                <MenuItem key={name} value={name}>
-                  {name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
+
+          {/* Horizontal Rule */}
+          <Box
+            sx={{
+              borderBottom: 1,
+              borderColor: "divider",
+              mb: 2,
+              width: "100%",
+            }}
+          />
+
+          {/* Filters Row */}
           <Box
             sx={{
               display: "flex",
-              gap: 2,
-              flexWrap: "wrap",
+              justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
+              gap: 2,
             }}
           >
-            {/* Branch Filter */}
-            <TextField
-              select
-              size="small"
-              label="Branch"
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="">All Branches</MenuItem>
-              {branches.map((branch) => (
-                <MenuItem key={branch._id} value={branch._id}>
-                  {branch.branchCode} - {branch.branchName}
-                </MenuItem>
-              ))}
-            </TextField>
+            {/* Left Side - Supervisor Filter */}
+            <Box>
+              <TextField
+                select
+                size="small"
+                label="Supervisor"
+                value={selectedSupervisor}
+                onChange={(e) => setSelectedSupervisor(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Supervisors</MenuItem>
+                {uniqueSupervisors.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
 
-            {/* Role Filter */}
-            <TextField
-              select
-              size="small"
-              label="Role"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              sx={{ minWidth: 150 }}
-            >
-              <MenuItem value="">All Roles</MenuItem>
-              <MenuItem value="employee">Employee</MenuItem>
-              <MenuItem value="approver">Approver</MenuItem>
-              <MenuItem value="hr">HR</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-            </TextField>
-
-            {/* Search Bar */}
-            <TextField
-              size="small"
-              placeholder="Search employees..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ minWidth: 250 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
+            {/* Right Side - Branch, Role, and Search Filters */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                alignItems: "center",
               }}
-            />
+            >
+              {/* Branch Filter */}
+              <TextField
+                select
+                size="small"
+                label="Branch"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Branches</MenuItem>
+                {branches.map((branch) => (
+                  <MenuItem key={branch._id} value={branch._id}>
+                    {branch.branchCode} - {branch.branchName}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {/* Role Filter */}
+              <TextField
+                select
+                size="small"
+                label="Role"
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                sx={{ minWidth: 150 }}
+              >
+                <MenuItem value="">All Roles</MenuItem>
+                <MenuItem value="employee">Employee</MenuItem>
+                <MenuItem value="approver">Approver</MenuItem>
+                <MenuItem value="hr">HR</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </TextField>
+
+              {/* Search Bar */}
+              <TextField
+                size="small"
+                placeholder="Search employees..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ minWidth: 250 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
           </Box>
         </Box>
         {loading ? (

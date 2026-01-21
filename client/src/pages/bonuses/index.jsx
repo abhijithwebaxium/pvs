@@ -225,15 +225,21 @@ const Bonuses = () => {
 
   const columns = [
     {
-      field: "employeeId",
-      headerName: "Employee ID",
-      width: 130,
-      flex: 0.6,
+      field: "slNo",
+      headerName: "Sl No",
+      width: 80,
+      minWidth: 80,
+      flex: 0.4,
+      renderCell: (params) => {
+        const index = employees.findIndex((emp) => emp._id === params.row._id);
+        return index + 1;
+      },
     },
     {
       field: "name",
       headerName: "Name",
-      width: 250,
+      width: 200,
+      minWidth: 150,
       flex: 1.2,
       valueGetter: (params, row) =>
         `${row.firstName || ""} ${row.lastName || ""}`.trim(),
@@ -242,13 +248,15 @@ const Bonuses = () => {
       field: "jobTitle",
       headerName: "Job Title",
       width: 180,
+      minWidth: 150,
       flex: 1,
       renderCell: (params) => params.row.jobTitle || "N/A",
     },
     {
       field: "branch",
       headerName: "Branch",
-      width: 180,
+      width: 200,
+      minWidth: 180,
       flex: 1,
       renderCell: (params) => {
         const branch = params.row.branch;
@@ -258,9 +266,40 @@ const Bonuses = () => {
       },
     },
     {
+      field: "salaryType",
+      headerName: "Salary Type",
+      width: 130,
+      minWidth: 120,
+      flex: 0.7,
+      renderCell: (params) => params.row.salaryType || "N/A",
+    },
+    {
+      field: "annualSalary",
+      headerName: "Annual Salary",
+      width: 150,
+      minWidth: 130,
+      flex: 0.8,
+      renderCell: (params) => {
+        const salary = params.row.annualSalary || 0;
+        return salary > 0 ? `$${salary.toLocaleString()}` : "N/A";
+      },
+    },
+    {
+      field: "hourlyPayRate",
+      headerName: "Hourly Rate",
+      width: 130,
+      minWidth: 120,
+      flex: 0.7,
+      renderCell: (params) => {
+        const rate = params.row.hourlyPayRate || 0;
+        return rate > 0 ? `$${rate.toFixed(2)}` : "N/A";
+      },
+    },
+    {
       field: "bonus2024",
       headerName: "Bonus 2024",
       width: 130,
+      minWidth: 120,
       flex: 0.7,
       renderCell: (params) => {
         const bonus = params.row.bonus2024 || 0;
@@ -271,6 +310,7 @@ const Bonuses = () => {
       field: "bonus2025",
       headerName: "Bonus 2025",
       width: 130,
+      minWidth: 120,
       flex: 0.7,
       renderCell: (params) => {
         const bonus = params.row.bonus2025 || 0;
@@ -313,6 +353,7 @@ const Bonuses = () => {
       field: "actions",
       headerName: "Actions",
       width: 140,
+      minWidth: 120,
       flex: 0.5,
       sortable: false,
       renderCell: (params) => {
@@ -398,7 +439,7 @@ const Bonuses = () => {
         </Alert>
       )}
 
-      <Paper sx={{ width: "100%", mb: 2 }}>
+      <Paper sx={{ width: "100%", mb: 2, overflow: "auto" }}>
         {loading ? (
           <Box
             sx={{
@@ -438,6 +479,7 @@ const Bonuses = () => {
             disableRowSelectionOnClick
             sx={{
               border: 0,
+              minWidth: 1200,
               "& .MuiDataGrid-cell:hover": {
                 cursor: "pointer",
               },

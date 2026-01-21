@@ -14,6 +14,7 @@ import {
   LinearProgress,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DownloadIcon from "@mui/icons-material/Download";
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
 
@@ -508,6 +509,35 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await api.get("/api/employees/template/download", {
+        responseType: "blob",
+      });
+
+      // Create a blob from the response
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary anchor element and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "employee_template.xlsx";
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError("Failed to download template. Please try again.");
+    }
+  };
+
   const handleClose = () => {
     if (!loading) {
       setSelectedBranch("");
@@ -530,7 +560,20 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       }}
       keepMounted
     >
-      <DialogTitle>Upload Employees from Excel</DialogTitle>
+      <DialogTitle>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="h6">Upload Employees from Excel</Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownloadTemplate}
+            disabled={loading}
+          >
+            Download Template
+          </Button>
+        </Box>
+      </DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2, whiteSpace: "pre-wrap" }}>
