@@ -29,12 +29,14 @@ const Bonuses = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [bonusDialog, setBonusDialog] = useState({
     open: false,
     employee: null,
   });
   const [bonusAmount, setBonusAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [proceedingForApproval, setProceedingForApproval] = useState(false);
 
   const fetchMyTeam = async () => {
     setLoading(true);
@@ -102,6 +104,7 @@ const Bonuses = () => {
       // Refresh the employee list
       await fetchMyTeam();
       handleCloseBonusDialog();
+      setSuccess("Bonus saved successfully");
     } catch (err) {
       const errorMessage =
         err.response?.data?.message ||
@@ -110,6 +113,31 @@ const Bonuses = () => {
       setError(errorMessage);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleProceedForApproval = async () => {
+    setProceedingForApproval(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const userId = user?.id || user?._id;
+
+      const response = await api.post(
+        `/api/employees/supervisor/submit-for-approval?supervisorId=${userId}`,
+      );
+
+      setSuccess(response.data.message);
+      await fetchMyTeam();
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while submitting bonuses for approval";
+      setError(errorMessage);
+    } finally {
+      setProceedingForApproval(false);
     }
   };
 
@@ -357,11 +385,30 @@ const Bonuses = () => {
       flex: 0.5,
       sortable: false,
       renderCell: (params) => {
-        const approvalInfo = getApprovalStatus(params.row);
-        const canEdit = approvalInfo.status !== "approved";
+        const isSubmitted = params.row.approvalStatus?.submittedForApproval;
+
+        // If already submitted for approval, disable editing
+        if (isSubmitted) {
+          return (
+            <Tooltip title="Bonus has been submitted for approval and is locked">
+              <span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  sx={{ fontSize: "0.75rem", py: 0.5, minWidth: "auto" }}
+                >
+                  Locked
+                </Button>
+              </span>
+            </Tooltip>
+          );
+        }
 
         // If bonus is not entered yet, show "Add Bonus" button
-        if (approvalInfo.status === "not_entered") {
+        const hasBonusValue =
+          params.row.bonus2025 && parseFloat(params.row.bonus2025) > 0;
+        if (!hasBonusValue) {
           return (
             <Button
               variant="contained"
@@ -374,25 +421,40 @@ const Bonuses = () => {
           );
         }
 
-        // If bonus is entered, show "Edit Bonus" text button
+        // If bonus is entered but not submitted, show "Edit Bonus" button
         return (
-          <Tooltip title={canEdit ? "" : "Cannot edit fully approved bonus"}>
-            <span>
-              <Button
-                variant="outlined"
-                size="small"
-                disabled={!canEdit}
-                onClick={() => handleOpenBonusDialog(params.row)}
-                sx={{ fontSize: "0.75rem", py: 0.5, minWidth: "auto" }}
-              >
-                Edit Bonus
-              </Button>
-            </span>
-          </Tooltip>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleOpenBonusDialog(params.row)}
+            sx={{ fontSize: "0.75rem", py: 0.5, minWidth: "auto" }}
+          >
+            Edit Bonus
+          </Button>
         );
       },
     },
   ];
+
+  // Check if any employee has bonuses submitted for approval
+  const hasSubmittedBonuses = employees.some(
+    (emp) => emp.approvalStatus?.submittedForApproval
+  );
+
+  // Count employees with bonuses entered but not yet submitted
+  const bonusesEnteredCount = employees.filter(
+    (emp) =>
+      emp.bonus2025 &&
+      parseFloat(emp.bonus2025) > 0 &&
+      !emp.approvalStatus?.submittedForApproval
+  ).length;
+
+  // Check if ALL employees have bonuses entered (required to enable proceed button)
+  const allEmployeesHaveBonuses = employees.length > 0 && employees.every(
+    (emp) =>
+      emp.bonus2025 &&
+      parseFloat(emp.bonus2025) > 0
+  );
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
@@ -408,34 +470,66 @@ const Bonuses = () => {
           Assign Employee Bonuses
         </Typography>
 
-        <Box sx={{ textAlign: "right", pr: 2 }}>
-          <Typography
-            variant="caption"
-            sx={{ color: "text.secondary", fontWeight: "medium" }}
-          >
-            TOTAL BONUS (2025)
-          </Typography>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: "bold", color: "primary.main" }}
-          >
-            $
-            {employees
-              .reduce((sum, emp) => sum + (parseFloat(emp.bonus2025) || 0), 0)
-              .toLocaleString()}
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexDirection:"column" }}>
+          <Box sx={{ textAlign: "right" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", fontWeight: "medium" }}
+            >
+              TOTAL BONUS (2025)
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: "bold", color: "primary.main" }}
+            >
+              $
+              {employees
+                .reduce((sum, emp) => sum + (parseFloat(emp.bonus2025) || 0), 0)
+                .toLocaleString()}
+            </Typography>
+          </Box>
+
+          {!hasSubmittedBonuses && (
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleProceedForApproval}
+              disabled={proceedingForApproval || !allEmployeesHaveBonuses}
+              sx={{
+                color: "#FFFFFF",
+                fontWeight: "bold",
+                px: 3,
+                py: 1,
+                "&.Mui-disabled": {
+                  color: "#FFFFFF",
+                  opacity: 0.7,
+                  backgroundColor: "rgba(0, 0, 0, 0.12)",
+                },
+              }}
+            >
+              {proceedingForApproval ? "Submitting..." : "Proceed for Approval"}
+            </Button>
+          )}
         </Box>
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        As a supervisor, you can enter and update bonus amounts for employees
-        under your supervision. Once entered, bonuses will go through the
-        approval process.
+        {hasSubmittedBonuses
+          ? "Bonuses have been submitted for approval and are now locked. You cannot edit them until the approval process is complete."
+          : allEmployeesHaveBonuses
+          ? "All employees have bonuses assigned. Click 'Proceed for Approval' to submit them for the approval process."
+          : "As a supervisor, you can enter and update bonus amounts for employees under your supervision. You must assign bonuses to ALL employees before you can proceed for approval."}
       </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
           {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess("")}>
+          {success}
         </Alert>
       )}
 
@@ -545,7 +639,7 @@ const Bonuses = () => {
                 InputProps={{
                   startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
                 }}
-                helperText="Enter the bonus amount for 2025. This will be sent for approval."
+                helperText="Enter the bonus amount for 2025. Click 'Proceed for Approval' to submit all bonuses."
               />
             </>
           )}
@@ -568,7 +662,7 @@ const Bonuses = () => {
               },
             }}
           >
-            {submitting ? "Saving..." : "Save & Send for Approval"}
+            {submitting ? "Saving..." : "Save Bonus"}
           </Button>
         </DialogActions>
       </Dialog>

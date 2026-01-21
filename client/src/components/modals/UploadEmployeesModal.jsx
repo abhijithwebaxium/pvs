@@ -244,7 +244,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           employeeId: employeeNumber,
           firstName: firstName,
           lastName: lastName,
-          password: "password123", // Default password
+          // Password will be set by backend (default: abc123xyz)
           ssn: getColumnValue(row, "SSN", " SSN ", "ssn") || "",
           company: getColumnValue(row, "Company", " Company ", "company") || "",
           companyCode:
@@ -561,7 +561,13 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       keepMounted
     >
       <DialogTitle>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography variant="h6">Upload Employees from Excel</Typography>
           <Button
             variant="outlined"

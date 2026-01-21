@@ -191,6 +191,14 @@ const EmployeeSchema = new Schema(
         type: Date,
         default: null,
       },
+      submittedForApproval: {
+        type: Boolean,
+        default: false,
+      },
+      submittedAt: {
+        type: Date,
+        default: null,
+      },
       level1: {
         status: {
           type: String,

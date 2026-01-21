@@ -401,7 +401,7 @@ export const bulkCreateEmployees = async (req, res, next) => {
       for (const emp of employees) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(
-          emp.password || "password123",
+          emp.password || "abc123xyz",
           salt,
         );
 
@@ -909,6 +909,7 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 1: Employees where this user is Level 1 approver
     const level1Employees = await Employee.find({
       level1Approver: approverId,
+      "approvalStatus.submittedForApproval": true,
       isActive: true,
       _id: { $ne: approverId },
     })
@@ -919,6 +920,7 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 2: Employees where this user is Level 2 approver
     const level2Employees = await Employee.find({
       level2Approver: approverId,
+      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       isActive: true,
       _id: { $ne: approverId },
@@ -930,6 +932,7 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 3: Employees where this user is Level 3 approver
     const level3Employees = await Employee.find({
       level3Approver: approverId,
+      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       isActive: true,
@@ -942,6 +945,7 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 4: Employees where this user is Level 4 approver
     const level4Employees = await Employee.find({
       level4Approver: approverId,
+      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       level3Approver: { $ne: approverId },
@@ -955,6 +959,7 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 5: Employees where this user is Level 5 approver
     const level5Employees = await Employee.find({
       level5Approver: approverId,
+      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       level3Approver: { $ne: approverId },
@@ -1098,63 +1103,24 @@ export const updateEmployeeBonus = async (req, res, next) => {
       );
     }
 
-    // Determine which approval levels are required based on available approvers
-    const approvalStatusUpdate = {
-      enteredBy: supervisorId,
-      enteredAt: new Date(),
-    };
-
-    // Only set status for levels that have approvers assigned
-    if (employee.level1Approver) {
-      approvalStatusUpdate.level1 = { status: "pending" };
+    // Check if already submitted for approval - if so, don't allow editing
+    if (employee.approvalStatus?.submittedForApproval) {
+      return next(
+        new AppError(
+          "Bonus has already been submitted for approval and cannot be edited",
+          403,
+        ),
+      );
     }
 
-    if (employee.level2Approver) {
-      approvalStatusUpdate.level2 = { status: "pending" };
-    }
-
-    if (employee.level3Approver) {
-      approvalStatusUpdate.level3 = { status: "pending" };
-    }
-
-    if (employee.level4Approver) {
-      approvalStatusUpdate.level4 = { status: "pending" };
-    }
-
-    if (employee.level5Approver) {
-      approvalStatusUpdate.level5 = { status: "pending" };
-    }
-
-    // Build update query - only set fields for levels with approvers
+    // Build update query - only update bonus amount and metadata, NOT approval status
     const updateQuery = {
       $set: {
         bonus2025: parseFloat(bonus2025),
         "approvalStatus.enteredBy": supervisorId,
-        "approvalStatus.enteredAt": approvalStatusUpdate.enteredAt,
+        "approvalStatus.enteredAt": new Date(),
       },
     };
-
-    // Only add status fields for levels that have approvers
-    if (approvalStatusUpdate.level1) {
-      updateQuery.$set["approvalStatus.level1.status"] =
-        approvalStatusUpdate.level1.status;
-    }
-    if (approvalStatusUpdate.level2) {
-      updateQuery.$set["approvalStatus.level2.status"] =
-        approvalStatusUpdate.level2.status;
-    }
-    if (approvalStatusUpdate.level3) {
-      updateQuery.$set["approvalStatus.level3.status"] =
-        approvalStatusUpdate.level3.status;
-    }
-    if (approvalStatusUpdate.level4) {
-      updateQuery.$set["approvalStatus.level4.status"] =
-        approvalStatusUpdate.level4.status;
-    }
-    if (approvalStatusUpdate.level5) {
-      updateQuery.$set["approvalStatus.level5.status"] =
-        approvalStatusUpdate.level5.status;
-    }
 
     const updatedEmployee = await Employee.findByIdAndUpdate(id, updateQuery, {
       new: true,
@@ -1191,8 +1157,104 @@ export const updateEmployeeBonus = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Bonus updated successfully and sent for approval",
+      message: "Bonus updated successfully",
       data: updatedEmployee,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Submit all bonuses for approval (supervisor action)
+// @route   POST /api/employees/supervisor/submit-for-approval
+// @access  Private (Supervisor only)
+export const submitBonusesForApproval = async (req, res, next) => {
+  try {
+    const supervisorId =
+      req.user?.userId ||
+      req.user?._id ||
+      req.body.supervisorId ||
+      req.query.supervisorId;
+
+    if (
+      !supervisorId ||
+      supervisorId === "undefined" ||
+      supervisorId === "null"
+    ) {
+      return next(new AppError("Supervisor ID is required", 400));
+    }
+
+    // Find all employees under this supervisor
+    const employees = await Employee.find({
+      supervisor: supervisorId,
+      isActive: true,
+      _id: { $ne: supervisorId },
+    });
+
+    if (!employees || employees.length === 0) {
+      return next(
+        new AppError("No employees found under your supervision", 404),
+      );
+    }
+
+    // Filter employees with bonuses entered but not yet submitted
+    const employeesWithBonuses = employees.filter(
+      (emp) =>
+        emp.approvalStatus?.enteredBy &&
+        !emp.approvalStatus?.submittedForApproval &&
+        emp.bonus2025 &&
+        emp.bonus2025 > 0,
+    );
+
+    if (employeesWithBonuses.length === 0) {
+      return next(
+        new AppError("No bonuses to submit. Please enter bonuses first.", 400),
+      );
+    }
+
+    // Update all employees to submitted status and set approval levels to pending
+    const bulkUpdates = employeesWithBonuses.map((employee) => {
+      const updateQuery = {
+        $set: {
+          "approvalStatus.submittedForApproval": true,
+          "approvalStatus.submittedAt": new Date(),
+        },
+      };
+
+      // Set status to pending for all levels that have approvers
+      if (employee.level1Approver) {
+        updateQuery.$set["approvalStatus.level1.status"] = "pending";
+      }
+      if (employee.level2Approver) {
+        updateQuery.$set["approvalStatus.level2.status"] = "pending";
+      }
+      if (employee.level3Approver) {
+        updateQuery.$set["approvalStatus.level3.status"] = "pending";
+      }
+      if (employee.level4Approver) {
+        updateQuery.$set["approvalStatus.level4.status"] = "pending";
+      }
+      if (employee.level5Approver) {
+        updateQuery.$set["approvalStatus.level5.status"] = "pending";
+      }
+
+      return {
+        updateOne: {
+          filter: { _id: employee._id },
+          update: updateQuery,
+        },
+      };
+    });
+
+    // Execute bulk update
+    const result = await Employee.bulkWrite(bulkUpdates);
+
+    res.status(200).json({
+      success: true,
+      message:
+        "Great work.! You have assigned bonuses for all the employees designated to you. They are sent to the next level for review. We'll Email you if something changes. Feel free to logout.",
+      count: employeesWithBonuses.length,
+      modifiedCount: result.modifiedCount,
     });
   } catch (error) {
     next(error);

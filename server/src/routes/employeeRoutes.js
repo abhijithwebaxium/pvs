@@ -18,6 +18,7 @@ import {
   updateEmployeeBonus,
   getMyBonusApprovals,
   processBonusApproval,
+  submitBonusesForApproval,
 } from "../controllers/employeeController.js";
 import { protect, authorize } from "../middlewares/auth.js";
 import path from "path";
@@ -83,6 +84,7 @@ router.post("/set-approver-roles", authorize(["admin"]), setApproverRoles);
 
 // Supervisor routes - for managing bonuses of supervised employees
 router.get("/supervisor/my-team", getMySupervisedEmployees);
+router.post("/supervisor/submit-for-approval", authorize(["hr", "admin", "approver"]), submitBonusesForApproval);
 
 // Bonus approval routes - approvers only
 router.get(
