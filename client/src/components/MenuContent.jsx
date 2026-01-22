@@ -27,12 +27,12 @@ const menuItems = [
     path: "/",
     roles: ["admin", "hr"],
   },
-  {
-    text: "Branches",
-    icon: <BusinessRoundedIcon />,
-    path: "/branches",
-    roles: ["admin", "hr"],
-  },
+  // {
+  //   text: "Branches",
+  //   icon: <BusinessRoundedIcon />,
+  //   path: "/branches",
+  //   roles: ["admin", "hr"],
+  // },
   {
     text: "Employees",
     icon: <PeopleRoundedIcon />,

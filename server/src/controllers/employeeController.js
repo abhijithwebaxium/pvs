@@ -22,7 +22,6 @@ export const getEmployees = async (req, res, next) => {
 
     const employees = await Employee.find(filter)
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .sort({ employeeId: 1 });
 
     res.status(200).json({
@@ -42,7 +41,6 @@ export const getEmployee = async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id)
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .populate("supervisor", "firstName lastName employeeId")
       .populate("level1Approver", "firstName lastName employeeId")
       .populate("level2Approver", "firstName lastName employeeId")
@@ -109,7 +107,6 @@ export const updateEmployee = async (req, res, next) => {
       runValidators: true,
     })
       .select("-password")
-      .populate("branch", "branchCode branchName location");
 
     if (!employee) {
       return next(new AppError("Employee not found", 404));
@@ -182,7 +179,6 @@ export const getEmployeesByBranch = async (req, res, next) => {
   try {
     const employees = await Employee.find({ branch: req.params.branchId })
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .sort({ employeeId: 1 });
 
     res.status(200).json({
@@ -870,7 +866,6 @@ export const getMyApprovals = async (req, res, next) => {
     }
     // Helper to get common populates
     const commonPopulates = [
-      { path: "branch", select: "branchCode branchName location" },
       {
         path: "approvalStatus.enteredBy",
         select: "firstName lastName employeeId",
@@ -899,10 +894,6 @@ export const getMyApprovals = async (req, res, next) => {
       {
         path: "approvalStatus.level5.approvedBy",
         select: "firstName lastName employeeId",
-      },
-      {
-        path: "branch",
-        select: "branchCode branchName location",
       },
     ];
 
@@ -1015,7 +1006,6 @@ export const getMySupervisedEmployees = async (req, res, next) => {
       _id: { $ne: supervisorId },
     })
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .populate("level1Approver", "firstName lastName employeeId")
       .populate("level2Approver", "firstName lastName employeeId")
       .populate("level3Approver", "firstName lastName employeeId")
@@ -1127,7 +1117,6 @@ export const updateEmployeeBonus = async (req, res, next) => {
       runValidators: true,
     })
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .populate("level1Approver", "firstName lastName employeeId")
       .populate("level2Approver", "firstName lastName employeeId")
       .populate("level3Approver", "firstName lastName employeeId")
@@ -1304,7 +1293,6 @@ export const getMyBonusApprovals = async (req, res, next) => {
       "approvalStatus.enteredBy": { $exists: true, $ne: null },
     })
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .populate("supervisor", "firstName lastName employeeId")
       .populate("level1Approver", "firstName lastName employeeId")
       .populate("level2Approver", "firstName lastName employeeId")
@@ -1467,7 +1455,6 @@ export const processBonusApproval = async (req, res, next) => {
       { new: true, runValidators: true },
     )
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .populate("supervisor", "firstName lastName employeeId")
       .populate("level1Approver", "firstName lastName employeeId")
       .populate("level2Approver", "firstName lastName employeeId")
@@ -1611,7 +1598,6 @@ export const processApproval = async (req, res, next) => {
       { new: true, runValidators: true },
     )
       .select("-password")
-      .populate("branch", "branchCode branchName location")
       .populate(`${levelKey}Approver`, "firstName lastName employeeId");
 
     res.status(200).json({
@@ -1620,6 +1606,192 @@ export const processApproval = async (req, res, next) => {
         action === "approve" ? "approved" : "rejected"
       } successfully at level ${level}`,
       data: updatedEmployee,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Bulk approve all pending approvals for an approver
+// @route   POST /api/employees/approvals/bulk-approve
+// @access  Private (Approver only) OR Public with approverId
+export const bulkApproveAll = async (req, res, next) => {
+  try {
+    const { comments, approverId: bodyApproverId } = req.body;
+    const approverId =
+      req.user?.userId ||
+      req.user?._id ||
+      bodyApproverId ||
+      req.query.approverId;
+
+    if (!approverId || approverId === "undefined" || approverId === "null") {
+      return next(new AppError("Approver ID is required", 400));
+    }
+
+    // Helper to get common populates
+    const commonPopulates = [
+      {
+        path: "approvalStatus.enteredBy",
+        select: "firstName lastName employeeId",
+      },
+      { path: "level1Approver", select: "firstName lastName employeeId" },
+      { path: "level2Approver", select: "firstName lastName employeeId" },
+      { path: "level3Approver", select: "firstName lastName employeeId" },
+      { path: "level4Approver", select: "firstName lastName employeeId" },
+      { path: "level5Approver", select: "firstName lastName employeeId" },
+    ];
+
+    // Get all employees where the approver has pending approvals
+    // IMPORTANT: Must filter by submittedForApproval to match getMyApprovals logic
+    const allEmployees = await Employee.find({
+      isActive: true,
+      _id: { $ne: approverId },
+      "approvalStatus.submittedForApproval": true,
+      $or: [
+        { level1Approver: approverId },
+        { level2Approver: approverId },
+        { level3Approver: approverId },
+        { level4Approver: approverId },
+        { level5Approver: approverId },
+      ],
+    })
+      .select("-password")
+      .populate(commonPopulates);
+
+    // Filter to get only the ones where:
+    // 1. Bonus is entered
+    // 2. This approver can approve (at their level)
+    // 3. Previous levels are approved
+    // 4. Current level is pending
+    const approvableEmployees = [];
+    const skippedEmployees = [];
+
+    for (const employee of allEmployees) {
+      // Check if bonus is entered
+      const isBonusEntered = !!(
+        employee.approvalStatus?.enteredBy ||
+        (employee.bonus2025 && employee.bonus2025 > 0)
+      );
+
+      if (!isBonusEntered) {
+        skippedEmployees.push({
+          employeeId: employee.employeeId,
+          name: `${employee.firstName} ${employee.lastName}`,
+          reason: "Bonus not entered",
+        });
+        continue;
+      }
+
+      // Find which level this approver should approve
+      let approverLevel = null;
+      let skipReason = null;
+
+      for (let level = 1; level <= 5; level++) {
+        const levelKey = `level${level}`;
+        const approverField = `${levelKey}Approver`;
+
+        // Get the approver ID - handle both populated (object) and non-populated (ObjectId) fields
+        const approverIdToCompare = employee[approverField]?._id
+          ? employee[approverField]._id.toString()
+          : employee[approverField]?.toString();
+
+        if (
+          employee[approverField] &&
+          approverIdToCompare === approverId.toString()
+        ) {
+          const status = employee.approvalStatus?.[levelKey]?.status;
+
+          // Check if this level is pending
+          if (status === "pending") {
+            // Check if previous levels are approved
+            let canApprove = true;
+            for (let prevLevel = 1; prevLevel < level; prevLevel++) {
+              const prevLevelKey = `level${prevLevel}`;
+              const prevApproverField = `${prevLevelKey}Approver`;
+              const prevStatus =
+                employee.approvalStatus?.[prevLevelKey]?.status;
+
+              if (employee[prevApproverField]) {
+                if (prevStatus !== "approved") {
+                  canApprove = false;
+                  skipReason = `Previous level ${prevLevel} not approved (status: ${prevStatus})`;
+                  break;
+                }
+              }
+            }
+
+            if (canApprove) {
+              approverLevel = level;
+              break;
+            } else {
+              skippedEmployees.push({
+                employeeId: employee.employeeId,
+                name: `${employee.firstName} ${employee.lastName}`,
+                reason: skipReason || "Previous level not approved",
+              });
+              break;
+            }
+          } else if (status === "approved" || status === "rejected") {
+            skippedEmployees.push({
+              employeeId: employee.employeeId,
+              name: `${employee.firstName} ${employee.lastName}`,
+              reason: `Already ${status}`,
+            });
+            break;
+          }
+        }
+      }
+
+      if (approverLevel) {
+        approvableEmployees.push({ employee, level: approverLevel });
+      }
+    }
+
+    if (approvableEmployees.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No employees available for bulk approval",
+        approvedCount: 0,
+        skippedCount: skippedEmployees.length,
+        skippedEmployees: skippedEmployees,
+      });
+    }
+
+    // Perform bulk approval
+    const bulkUpdates = [];
+    const currentDate = new Date();
+
+    for (const { employee, level } of approvableEmployees) {
+      const levelKey = `level${level}`;
+      const approvalUpdate = {
+        [`approvalStatus.${levelKey}.status`]: "approved",
+        [`approvalStatus.${levelKey}.approvedBy`]: approverId,
+        [`approvalStatus.${levelKey}.approvedAt`]: currentDate,
+      };
+
+      if (comments) {
+        approvalUpdate[`approvalStatus.${levelKey}.comments`] = comments;
+      }
+
+      bulkUpdates.push({
+        updateOne: {
+          filter: { _id: employee._id },
+          update: { $set: approvalUpdate },
+        },
+      });
+    }
+
+    // Execute bulk update
+    const result = await Employee.bulkWrite(bulkUpdates);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully approved ${approvableEmployees.length} employee(s)`,
+      approvedCount: approvableEmployees.length,
+      skippedCount: skippedEmployees.length,
+      skippedEmployees:
+        skippedEmployees.length > 0 ? skippedEmployees : undefined,
+      modifiedCount: result.modifiedCount,
     });
   } catch (error) {
     next(error);

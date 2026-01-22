@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import PeopleIcon from "@mui/icons-material/People";
-import BusinessIcon from "@mui/icons-material/Business";
 import SearchIcon from "@mui/icons-material/Search";
 import useDashboardStats from "../../hooks/useDashboardStats";
 import api from "../../utils/api";
@@ -22,19 +21,16 @@ import api from "../../utils/api";
 const HRDashboard = ({ user }) => {
   const {
     staffCount,
-    branchCount,
     loading: statsLoading,
     error: statsError,
   } = useDashboardStats();
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedSupervisor, setSelectedSupervisor] = useState("");
@@ -58,17 +54,7 @@ const HRDashboard = ({ user }) => {
       }
     };
 
-    const fetchBranches = async () => {
-      try {
-        const response = await api.get("/api/branches");
-        setBranches(response.data.data);
-      } catch (err) {
-        console.error("Failed to fetch branches:", err);
-      }
-    };
-
     fetchEmployees();
-    fetchBranches();
   }, []);
 
   // Apply filters whenever filter values change
@@ -88,11 +74,6 @@ const HRDashboard = ({ user }) => {
       );
     }
 
-    // Branch filter
-    if (selectedBranch) {
-      filtered = filtered.filter((emp) => emp.branch?._id === selectedBranch);
-    }
-
     // Role filter
     if (selectedRole) {
       filtered = filtered.filter((emp) => emp.role === selectedRole);
@@ -110,7 +91,7 @@ const HRDashboard = ({ user }) => {
     }
 
     setFilteredEmployees(filtered);
-  }, [searchQuery, selectedBranch, selectedRole, selectedStatus, selectedSupervisor, employees]);
+  }, [searchQuery, selectedRole, selectedStatus, selectedSupervisor, employees]);
 
   // Extract unique supervisors from all employees
   const uniqueSupervisors = [
@@ -165,17 +146,6 @@ const HRDashboard = ({ user }) => {
       headerName: "Job Title",
       width: 180,
       renderCell: (params) => params.value || "N/A",
-    },
-    {
-      field: "branch",
-      headerName: "Branch",
-      width: 180,
-      renderCell: (params) => {
-        const branch = params.row.branch;
-        return branch
-          ? `${branch.branchCode} - ${branch.branchName}`
-          : "Not Assigned";
-      },
     },
     {
       field: "supervisorName",
@@ -318,144 +288,142 @@ const HRDashboard = ({ user }) => {
   return (
     <Box sx={{ pb: 4 }}>
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={6}>
           <Card
-            variant="outlined"
             sx={{
               height: "100%",
-              borderRadius: "16px",
-              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+              background: "linear-gradient(135deg, hsl(210, 100%, 95%) 0%, hsl(210, 100%, 92%) 100%)",
+              borderRadius: 2,
               border: "1px solid",
-              borderColor: "divider",
-              transition:
-                "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+              borderColor: "primary.light",
+              boxShadow: "0 4px 20px 0 rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-4px)",
-                boxShadow: "0px 12px 30px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 8px 30px 0 rgba(33, 150, 243, 0.15)",
               },
             }}
           >
-            <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  mb: 2,
-                }}
-              >
-                <Box>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      backgroundColor: "primary.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <PeopleIcon sx={{ fontSize: 28, color: "white" }} />
+                  </Box>
                   <Typography
                     variant="subtitle2"
-                    color="text.secondary"
                     sx={{
+                      color: "primary.dark",
                       fontWeight: 600,
                       textTransform: "uppercase",
-                      letterSpacing: 1,
+                      letterSpacing: 0.5,
+                      fontSize: "0.75rem",
                     }}
                   >
                     Total Employees
                   </Typography>
-                  <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
-                    {statsLoading ? <CircularProgress size={30} /> : staffCount}
+                </Box>
+                <Box>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 700,
+                      mb: 0.5,
+                    }}
+                  >
+                    {statsLoading ? <CircularProgress size={30} sx={{ color: "primary.main" }} /> : staffCount}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Active staff members
                   </Typography>
                 </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 56,
-                    height: 56,
-                    borderRadius: "12px",
-                    backgroundColor: "primary.light",
-                    color: "primary.main",
-                    opacity: 0.9,
-                  }}
-                >
-                  <PeopleIcon sx={{ fontSize: 32, color: "#fff" }} />
-                </Box>
               </Box>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontWeight: 500 }}
-              >
-                Active staff members
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={6}>
           <Card
-            variant="outlined"
             sx={{
               height: "100%",
-              borderRadius: "16px",
-              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+              background: "linear-gradient(135deg, hsl(210, 100%, 95%) 0%, hsl(210, 100%, 92%) 100%)",
+              borderRadius: 2,
               border: "1px solid",
-              borderColor: "divider",
-              transition:
-                "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+              borderColor: "primary.light",
+              boxShadow: "0 4px 20px 0 rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-4px)",
-                boxShadow: "0px 12px 30px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0 8px 30px 0 rgba(33, 150, 243, 0.15)",
               },
             }}
           >
-            <CardContent sx={{ p: 3, "&:last-child": { pb: 3 } }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  mb: 2,
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box
                     sx={{
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: 1,
+                      p: 1.5,
+                      borderRadius: 2,
+                      backgroundColor: "primary.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    Branches
-                  </Typography>
-                  <Typography variant="h3" sx={{ fontWeight: 700, mt: 1 }}>
-                    {statsLoading ? (
-                      <CircularProgress size={30} />
-                    ) : (
-                      branchCount
-                    )}
+                    <PeopleIcon sx={{ fontSize: 28, color: "white" }} />
+                  </Box>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Approvals Completed
                   </Typography>
                 </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 56,
-                    height: 56,
-                    borderRadius: "12px",
-                    backgroundColor: "success.light",
-                    color: "success.main",
-                    opacity: 0.9,
-                  }}
-                >
-                  <BusinessIcon sx={{ fontSize: 32, color: "#fff" }} />
+                <Box>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 700,
+                      mb: 0.5,
+                    }}
+                  >
+                    {loading ? <CircularProgress size={30} sx={{ color: "primary.main" }} /> : fullyApprovedCount}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Out of {totalEmployees} employees
+                  </Typography>
                 </Box>
               </Box>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontWeight: 500 }}
-              >
-                Operational locations
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -517,23 +485,6 @@ const HRDashboard = ({ user }) => {
                 {uniqueSupervisors.map((name) => (
                   <MenuItem key={name} value={name}>
                     {name}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              {/* Branch Filter */}
-              <TextField
-                select
-                size="small"
-                label="Branch"
-                value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value)}
-                sx={{ minWidth: 200 }}
-              >
-                <MenuItem value="">All Branches</MenuItem>
-                {branches.map((branch) => (
-                  <MenuItem key={branch._id} value={branch._id}>
-                    {branch.branchCode} - {branch.branchName}
                   </MenuItem>
                 ))}
               </TextField>

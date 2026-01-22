@@ -28,7 +28,6 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
     lastName: "",
     email: "",
     password: "",
-    branch: "",
     department: "",
     phone: "",
     role: "employee",
@@ -38,25 +37,9 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
     zipCode: "",
     country: "",
   });
-  const [branches, setBranches] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      fetchBranches();
-    }
-  }, [open]);
-
-  const fetchBranches = async () => {
-    try {
-      const response = await api.get("/api/branches?isActive=true");
-      setBranches(response.data.data);
-    } catch (err) {
-      // Error fetching branches
-    }
-  };
 
   const handleChange = (e) => {
     setFormData({
@@ -96,7 +79,6 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        branch: formData.branch || undefined,
         department: formData.department || undefined,
         phone: formData.phone || undefined,
         role: formData.role,
@@ -118,7 +100,6 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         lastName: "",
         email: "",
         password: "",
-        branch: "",
         department: "",
         phone: "",
         role: "employee",
@@ -146,7 +127,6 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         lastName: "",
         email: "",
         password: "",
-        branch: "",
         department: "",
         phone: "",
         role: "employee",
@@ -269,25 +249,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                select
-                name="branch"
-                label="Branch"
-                value={formData.branch}
-                onChange={handleChange}
-                disabled={loading}
-              >
-                <MenuItem value="">None</MenuItem>
-                {branches.map((branch) => (
-                  <MenuItem key={branch._id} value={branch._id}>
-                    {branch.branchCode} - {branch.branchName}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 name="department"

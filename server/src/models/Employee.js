@@ -56,11 +56,6 @@ const EmployeeSchema = new Schema(
       type: String,
       trim: true,
     },
-    branch: {
-      type: Schema.Types.ObjectId,
-      ref: "Branch",
-      default: null,
-    },
     location: {
       type: String,
       trim: true,
@@ -316,7 +311,6 @@ EmployeeSchema.pre("validate", function () {
 
 // Index for efficient queries
 // EmployeeSchema.index({ employeeId: 1 });
-EmployeeSchema.index({ branch: 1 });
 EmployeeSchema.index({ isActive: 1 });
 EmployeeSchema.index({ level1Approver: 1 });
 EmployeeSchema.index({ level2Approver: 1 });

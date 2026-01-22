@@ -19,6 +19,7 @@ import {
   getMyBonusApprovals,
   processBonusApproval,
   submitBonusesForApproval,
+  bulkApproveAll,
 } from "../controllers/employeeController.js";
 import { protect, authorize } from "../middlewares/auth.js";
 import path from "path";
@@ -113,6 +114,11 @@ router.get(
   "/approvals/my-approvals",
   authorize(["approver", "hr", "admin"]),
   getMyApprovals,
+);
+router.post(
+  "/approvals/bulk-approve",
+  authorize(["approver", "hr", "admin"]),
+  bulkApproveAll,
 );
 router.post(
   "/approvals/:employeeId",

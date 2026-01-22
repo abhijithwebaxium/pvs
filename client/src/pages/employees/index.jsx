@@ -23,7 +23,6 @@ import api from "../../utils/api";
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openModal, setOpenModal] = useState(false);
@@ -31,7 +30,6 @@ const Employees = () => {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
@@ -57,20 +55,8 @@ const Employees = () => {
     }
   };
 
-  const fetchBranches = async () => {
-    try {
-      const response = await api.get("/api/branches");
-      const { data } = response;
-
-      setBranches(data.data);
-    } catch (err) {
-      console.error(err.response?.data?.message || "Failed to fetch branches");
-    }
-  };
-
   useEffect(() => {
     fetchEmployees();
-    fetchBranches();
   }, []);
 
   // Apply filters whenever filter values change
@@ -90,11 +76,6 @@ const Employees = () => {
       );
     }
 
-    // Branch filter
-    if (selectedBranch) {
-      filtered = filtered.filter((emp) => emp.branch?._id === selectedBranch);
-    }
-
     // Role filter
     if (selectedRole) {
       filtered = filtered.filter((emp) => emp.role === selectedRole);
@@ -107,7 +88,7 @@ const Employees = () => {
     }
 
     setFilteredEmployees(filtered);
-  }, [searchQuery, selectedBranch, selectedRole, selectedStatus, employees]);
+  }, [searchQuery, selectedRole, selectedStatus, employees]);
 
   const handleAddEmployee = () => {
     setOpenModal(true);
@@ -163,19 +144,6 @@ const Employees = () => {
       minWidth: 150,
       flex: 1,
       renderCell: (params) => params.value || "N/A",
-    },
-    {
-      field: "branch",
-      headerName: "Branch",
-      width: 180,
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) => {
-        const branch = params.row.branch;
-        return branch
-          ? `${branch.branchCode} - ${branch.branchName}`
-          : "Not Assigned";
-      },
     },
     {
       field: "supervisorName",
@@ -297,23 +265,6 @@ const Employees = () => {
                 ),
               }}
             />
-
-            {/* Branch Filter */}
-            <TextField
-              select
-              size="small"
-              label="Branch"
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="">All Branches</MenuItem>
-              {branches.map((branch) => (
-                <MenuItem key={branch._id} value={branch._id}>
-                  {branch.branchCode} - {branch.branchName}
-                </MenuItem>
-              ))}
-            </TextField>
 
             {/* Role Filter */}
             <TextField

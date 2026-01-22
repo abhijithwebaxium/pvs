@@ -155,7 +155,6 @@ export const getMe = async (req, res, next) => {
   try {
     const user = await Employee.findById(req.user.userId)
       .select("-password")
-      .populate("branch", "branchCode branchName location");
 
     if (!user) {
       return next(new AppError("User not found", 404));

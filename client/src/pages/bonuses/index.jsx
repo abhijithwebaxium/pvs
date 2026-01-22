@@ -281,19 +281,6 @@ const Bonuses = () => {
       renderCell: (params) => params.row.jobTitle || "N/A",
     },
     {
-      field: "branch",
-      headerName: "Branch",
-      width: 200,
-      minWidth: 180,
-      flex: 1,
-      renderCell: (params) => {
-        const branch = params.row.branch;
-        return branch
-          ? `${branch.branchCode} - ${branch.branchName}`
-          : "Not Assigned";
-      },
-    },
-    {
       field: "salaryType",
       headerName: "Salary Type",
       width: 130,

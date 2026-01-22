@@ -23,28 +23,11 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [branches, setBranches] = useState([]);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  useEffect(() => {
-    if (open) {
-      fetchBranches();
-    }
-  }, [open]);
-
-  const fetchBranches = async () => {
-    try {
-      const response = await api.get("/api/branches?isActive=true");
-      setBranches(response.data.data);
-    } catch (err) {
-      // Error fetching branches
-    }
-  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -105,11 +88,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
     setSuccessMessage("");
 
     // Validation
-    if (!selectedBranch) {
-      setError("Please select a branch");
-      return;
-    }
-
     if (!file) {
       setError("Please select an Excel file to upload");
       return;
@@ -265,7 +243,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             ) || "",
           location:
             getColumnValue(row, "Location", " Location ", "location") || "",
-          branch: selectedBranch,
           jobTitle:
             getColumnValue(
               row,
@@ -472,7 +449,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
         // Reset form after a short delay
         setTimeout(() => {
-          setSelectedBranch("");
           setFile(null);
           setUploadProgress(0);
           onEmployeesUploaded();
@@ -496,7 +472,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
       // Reset form after a short delay
       setTimeout(() => {
-        setSelectedBranch("");
         setFile(null);
         setUploadProgress(0);
         onEmployeesUploaded();
@@ -540,7 +515,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
   const handleClose = () => {
     if (!loading) {
-      setSelectedBranch("");
       setFile(null);
       setError("");
       setSuccessMessage("");
@@ -594,25 +568,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-          <TextField
-            fullWidth
-            required
-            select
-            name="branch"
-            label="Select Branch"
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            disabled={loading}
-            sx={{ mb: 3 }}
-          >
-            <MenuItem value="">Select a branch</MenuItem>
-            {branches.map((branch) => (
-              <MenuItem key={branch._id} value={branch._id}>
-                {branch.branchCode} - {branch.branchName}
-              </MenuItem>
-            ))}
-          </TextField>
-
           <Box
             sx={{
               border: "2px dashed",
@@ -688,7 +643,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading || !file || !selectedBranch}
+          disabled={loading || !file}
         >
           {loading ? "Uploading..." : "Upload Employees"}
         </Button>

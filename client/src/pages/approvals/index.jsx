@@ -65,25 +65,22 @@ const Approvals = () => {
   // Filter states
   const [filterStatus, setFilterStatus] = useState("all"); // 'all', 'pending', 'approved'
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedSupervisor, setSelectedSupervisor] = useState(""); // Supervisor State
-  const [branches, setBranches] = useState([]);
 
-  const fetchBranches = async () => {
-    try {
-      const response = await api.get("/api/branches");
-      console.log("Branch API Response:", response);
-      const { data } = response;
-      console.log("Extracted data:", data);
-      console.log("Branches array:", data.data);
+  // Bulk approval states
+  const [bulkApprovalDialog, setBulkApprovalDialog] = useState({
+    open: false,
+  });
+  const [bulkComments, setBulkComments] = useState("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
-      setBranches(data.data);
-      console.log("Branches state set to:", data.data);
-    } catch (err) {
-      console.error("fetchBranches error:", err.response?.data || err.message);
-    }
-  };
+  // Bulk approval result dialog
+  const [bulkResultDialog, setBulkResultDialog] = useState({
+    open: false,
+    approvedCount: 0,
+    skippedEmployees: [],
+  });
 
   const fetchApprovals = async () => {
     setLoading(true);
@@ -112,7 +109,6 @@ const Approvals = () => {
   useEffect(() => {
     if (user?.id || user?._id) {
       fetchApprovals();
-      fetchBranches();
     }
   }, [user]);
 
@@ -164,6 +160,59 @@ const Approvals = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleOpenBulkApprovalDialog = () => {
+    setBulkApprovalDialog({ open: true });
+    setBulkComments("");
+  };
+
+  const handleCloseBulkApprovalDialog = () => {
+    setBulkApprovalDialog({ open: false });
+    setBulkComments("");
+  };
+
+  const handleSubmitBulkApproval = async () => {
+    setBulkSubmitting(true);
+    setError("");
+
+    try {
+      const userId = user?.id || user?._id;
+
+      const response = await api.post(
+        `/api/employees/approvals/bulk-approve?approverId=${userId}`,
+        {
+          comments: bulkComments,
+        },
+      );
+
+      // Refresh the approvals list
+      await fetchApprovals();
+      handleCloseBulkApprovalDialog();
+
+      // Show result dialog
+      setBulkResultDialog({
+        open: true,
+        approvedCount: response.data.approvedCount || 0,
+        skippedEmployees: response.data.skippedEmployees || [],
+      });
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while processing bulk approval";
+      setError(errorMessage);
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
+
+  const handleCloseBulkResultDialog = () => {
+    setBulkResultDialog({
+      open: false,
+      approvedCount: 0,
+      skippedEmployees: [],
+    });
   };
 
   const canApprove = (employee, level) => {
@@ -354,18 +403,6 @@ const Approvals = () => {
       renderCell: (params) => {
         const bonus = params.row.bonus2025 || 0;
         return `$${bonus.toLocaleString()}`;
-      },
-    },
-    {
-      field: "branch",
-      headerName: "Branch",
-      minWidth: 140,
-      flex: 1,
-      renderCell: (params) => {
-        const branch = params.row.branch;
-        return branch
-          ? `${branch.branchCode} - ${branch.branchName}`
-          : "Not Assigned";
       },
     },
     {
@@ -848,12 +885,6 @@ const Approvals = () => {
         `${row.firstName} ${row.lastName}`.toLowerCase().includes(query);
     }
 
-    // Branch Filter
-    let branchMatch = true;
-    if (selectedBranch) {
-      branchMatch = row.branch?._id === selectedBranch;
-    }
-
     // Role Filter
     let roleMatch = true;
     if (selectedRole) {
@@ -866,7 +897,7 @@ const Approvals = () => {
       supervisorMatch = row.supervisorName === selectedSupervisor;
     }
 
-    return searchMatch && branchMatch && roleMatch && supervisorMatch;
+    return searchMatch && roleMatch && supervisorMatch;
   });
 
   // 2. Determine Counts from the "Pool"
@@ -1055,14 +1086,27 @@ const Approvals = () => {
               />
             </Box>
 
-            {/* Bonus Aggregates */}
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
-              <Typography variant="body2" color="text.secondary">
-                <strong>2024 Bonus Aggregate:</strong> ${bonus2024Aggregate.toLocaleString()}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                <strong>2025 Bonus Aggregate:</strong> ${bonus2025Aggregate.toLocaleString()}
-              </Typography>
+            {/* Bonus Aggregates and Approve All Button */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>2024 Bonus Aggregate:</strong> ${bonus2024Aggregate.toLocaleString()}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>2025 Bonus Aggregate:</strong> ${bonus2025Aggregate.toLocaleString()}
+                </Typography>
+              </Box>
+              {totalPending > 0 && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<CheckCircleIcon />}
+                  onClick={handleOpenBulkApprovalDialog}
+                  sx={{ whiteSpace: "nowrap" }}
+                >
+                  Approve All
+                </Button>
+              )}
             </Box>
           </Box>
 
@@ -1114,23 +1158,6 @@ const Approvals = () => {
                 alignItems: "center",
               }}
             >
-              {/* Branch Filter */}
-              <TextField
-                select
-                size="small"
-                label="Branch"
-                value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value)}
-                sx={{ minWidth: 200 }}
-              >
-                <MenuItem value="">All Branches</MenuItem>
-                {branches.map((branch) => (
-                  <MenuItem key={branch._id} value={branch._id}>
-                    {branch.branchCode} - {branch.branchName}
-                  </MenuItem>
-                ))}
-              </TextField>
-
               {/* Role Filter */}
               <TextField
                 select
@@ -1386,6 +1413,123 @@ const Approvals = () => {
               : approvalDialog.action === "approve"
                 ? "Approve"
                 : "Reject"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Approval Confirmation Dialog */}
+      <Dialog
+        open={bulkApprovalDialog.open}
+        onClose={handleCloseBulkApprovalDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Approve All Pending Bonuses</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Are you sure you want to approve all pending employee bonuses at once?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              This action will approve <strong>{totalPending}</strong> pending bonus{totalPending !== 1 ? "es" : ""} that are eligible for your approval.
+            </Typography>
+            <Typography variant="body2" color="warning.main" sx={{ fontStyle: "italic" }}>
+              Note: Only employees with bonuses entered and previous levels approved will be processed.
+            </Typography>
+          </Box>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Comments (Optional)"
+            fullWidth
+            multiline
+            rows={4}
+            value={bulkComments}
+            onChange={(e) => setBulkComments(e.target.value)}
+            placeholder="Add comments that will apply to all approvals..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseBulkApprovalDialog} disabled={bulkSubmitting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitBulkApproval}
+            variant="contained"
+            color="success"
+            disabled={bulkSubmitting}
+            sx={{ color: "white" }}
+          >
+            {bulkSubmitting ? "Processing..." : "Yes, Approve All"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Approval Result Dialog */}
+      <Dialog
+        open={bulkResultDialog.open}
+        onClose={handleCloseBulkResultDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircleIcon color="success" fontSize="large" />
+            <Typography variant="h6">Bulk Approval Complete</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            {bulkResultDialog.approvedCount > 0 ? (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Successfully approved <strong>{bulkResultDialog.approvedCount}</strong> employee{bulkResultDialog.approvedCount !== 1 ? "s" : ""}!
+              </Alert>
+            ) : (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No employees were approved.
+              </Alert>
+            )}
+
+            {bulkResultDialog.skippedEmployees && bulkResultDialog.skippedEmployees.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold" }}>
+                  Skipped {bulkResultDialog.skippedEmployees.length} employee{bulkResultDialog.skippedEmployees.length !== 1 ? "s" : ""}:
+                </Typography>
+                <Box
+                  sx={{
+                    maxHeight: 300,
+                    overflow: "auto",
+                    bgcolor: "background.default",
+                    borderRadius: 1,
+                    p: 2,
+                  }}
+                >
+                  {bulkResultDialog.skippedEmployees.map((emp, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        mb: 1.5,
+                        pb: 1.5,
+                        borderBottom: index < bulkResultDialog.skippedEmployees.length - 1 ? "1px solid" : "none",
+                        borderColor: "divider",
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: "medium" }}>
+                        {emp.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Reason: {emp.reason}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseBulkResultDialog} variant="contained" color="primary">
+            OK
           </Button>
         </DialogActions>
       </Dialog>
