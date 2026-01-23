@@ -11,8 +11,10 @@ import {
   TextField,
   MenuItem,
   InputAdornment,
+  LinearProgress,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { PieChart } from "@mui/x-charts/PieChart";
 import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
 import useDashboardStats from "../../hooks/useDashboardStats";
@@ -34,6 +36,7 @@ const HRDashboard = ({ user }) => {
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedSupervisor, setSelectedSupervisor] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("");
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -90,13 +93,25 @@ const HRDashboard = ({ user }) => {
       filtered = filtered.filter((emp) => emp.supervisorName === selectedSupervisor);
     }
 
+    // Company filter
+    if (selectedCompany) {
+      filtered = filtered.filter((emp) => emp.company === selectedCompany);
+    }
+
     setFilteredEmployees(filtered);
-  }, [searchQuery, selectedRole, selectedStatus, selectedSupervisor, employees]);
+  }, [searchQuery, selectedRole, selectedStatus, selectedSupervisor, selectedCompany, employees]);
 
   // Extract unique supervisors from all employees
   const uniqueSupervisors = [
     ...new Set(
       employees.map((emp) => emp.supervisorName).filter((name) => name)
+    ),
+  ].sort();
+
+  // Extract unique companies from all employees
+  const uniqueCompanies = [
+    ...new Set(
+      employees.map((emp) => emp.company).filter((name) => name)
     ),
   ].sort();
 
@@ -106,6 +121,48 @@ const HRDashboard = ({ user }) => {
         .filter((emp) => emp.supervisorName === selectedSupervisor)
         .reduce((sum, emp) => sum + (parseFloat(emp.bonus2025) || 0), 0)
     : 0;
+
+  // Calculate supervisor bonus statistics
+  const supervisorStats = uniqueSupervisors.map((supervisorName) => {
+    const supervisorEmployees = employees.filter(
+      (emp) => emp.supervisorName === supervisorName
+    );
+    const totalEmployees = supervisorEmployees.length;
+    const employeesWithBonus = supervisorEmployees.filter(
+      (emp) => parseFloat(emp.bonus2025) > 0
+    ).length;
+    const percentage = totalEmployees > 0
+      ? ((employeesWithBonus / totalEmployees) * 100).toFixed(1)
+      : 0;
+
+    return {
+      id: supervisorName,
+      supervisorName,
+      totalEmployees,
+      employeesWithBonus,
+      percentage: parseFloat(percentage),
+    };
+  });
+
+  // Calculate donut chart data - Bonus allocation status
+  const totalActiveEmployees = employees.filter((emp) => emp.isActive).length;
+  const employeesWithBonus2025 = employees.filter(
+    (emp) => emp.isActive && parseFloat(emp.bonus2025) > 0
+  ).length;
+  const employeesWithoutBonus = totalActiveEmployees - employeesWithBonus2025;
+
+  const bonusChartData = [
+    {
+      id: 0,
+      value: employeesWithBonus2025,
+      color: "#4caf50",
+    },
+    {
+      id: 1,
+      value: employeesWithoutBonus,
+      color: "#ff9800",
+    },
+  ];
 
   // Calculate approval completion stats
   const totalEmployees = filteredEmployees.length;
@@ -123,6 +180,79 @@ const HRDashboard = ({ user }) => {
     // Employee must have at least one approver assigned
     return emp.level1Approver || emp.level2Approver || emp.level3Approver || emp.level4Approver || emp.level5Approver;
   }).length;
+
+  // Supervisor table columns
+  const supervisorColumns = [
+    {
+      field: "slNo",
+      headerName: "SL. No",
+      width: 80,
+      renderCell: (params) => {
+        const rows = params.api.getAllRowIds();
+        return rows.indexOf(params.id) + 1;
+      },
+    },
+    {
+      field: "supervisorName",
+      headerName: "Supervisor Name",
+      flex: 1,
+      minWidth: 200,
+    },
+    {
+      field: "totalEmployees",
+      headerName: "Total Employees",
+      width: 150,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "employeesWithBonus",
+      headerName: "Employees with Bonus",
+      width: 180,
+      align: "center",
+      headerAlign: "center",
+    },
+    {
+      field: "percentage",
+      headerName: "Bonus Allocation %",
+      width: 200,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params) => (
+        <Box sx={{ width: "100%", display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+          <Box sx={{ width: "100%", position: "relative" }}>
+            <LinearProgress
+              variant="determinate"
+              value={params.value}
+              sx={{
+                height: 24,
+                borderRadius: 2,
+                backgroundColor: "action.hover",
+                "& .MuiLinearProgress-bar": {
+                  borderRadius: 2,
+                  backgroundColor: params.value >= 50 ? "success.main" : "warning.main",
+                },
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                fontWeight: 700,
+                color: params.value > 30 ? "white" : "text.primary",
+                zIndex: 1,
+              }}
+            >
+              {params.value}%
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+  ];
 
   const columns = [
     {
@@ -472,6 +602,23 @@ const HRDashboard = ({ user }) => {
                 alignItems: "center",
               }}
             >
+              {/* Company Filter */}
+              <TextField
+                select
+                size="small"
+                label="Company"
+                value={selectedCompany}
+                onChange={(e) => setSelectedCompany(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Companies</MenuItem>
+                {uniqueCompanies.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
               {/* Supervisor Filter */}
               <TextField
                 select
@@ -566,6 +713,145 @@ const HRDashboard = ({ user }) => {
           />
         </Box>
       </Paper>
+
+      {/* Supervisor Statistics and Chart Section */}
+      <Box sx={{ display: "flex", gap: 3, alignItems: "stretch" }}>
+        {/* Supervisor Bonus Statistics Table */}
+        <Paper
+          sx={{
+            flex: 1,
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
+              Supervisor Bonus Statistics
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Percentage of employees allocated bonus by supervisor
+            </Typography>
+          </Box>
+
+          <Box sx={{ height: 400, width: "100%" }}>
+            <DataGrid
+              rows={supervisorStats}
+              columns={supervisorColumns}
+              getRowId={(row) => row.id}
+              loading={loading}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 5, page: 0 },
+                },
+              }}
+              pageSizeOptions={[5, 10, 25]}
+              disableRowSelectionOnClick
+              sx={{
+                border: 0,
+                "& .MuiDataGrid-columnHeaders": {
+                  backgroundColor: "background.paper",
+                  borderBottom: "2px solid",
+                  borderColor: "divider",
+                },
+                "& .MuiDataGrid-cell": {
+                  borderBottom: "1px solid",
+                  borderColor: "divider",
+                },
+              }}
+            />
+          </Box>
+        </Paper>
+
+        {/* Bonus Allocation Donut Chart */}
+        <Paper
+          sx={{
+            width: "400px",
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+            border: "1px solid",
+            borderColor: "divider",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
+              Bonus Allocation Overview
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Distribution of 2025 bonus allocation
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 2,
+              position: "relative",
+            }}
+          >
+            <Box sx={{ position: "relative" }}>
+              <PieChart
+                series={[
+                  {
+                    data: bonusChartData,
+                    innerRadius: 80,
+                    outerRadius: 120,
+                    paddingAngle: 2,
+                    cornerRadius: 5,
+                    highlightScope: { faded: "global", highlighted: "item" },
+                  },
+                ]}
+                width={380}
+                height={300}
+                slotProps={{
+                  legend: {
+                    hidden: true,
+                  },
+                }}
+              />
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  textAlign: "center",
+                }}
+              >
+                <Typography variant="h4" sx={{ fontWeight: 700, color: "primary.main" }}>
+                  {totalActiveEmployees > 0
+                    ? ((employeesWithBonus2025 / totalActiveEmployees) * 100).toFixed(1)
+                    : 0}%
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Overall Allocation
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Custom Legend */}
+            <Box sx={{ display: "flex", gap: 3, mt: 2, justifyContent: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 15, height: 15, borderRadius: "3px", bgcolor: "#4caf50" }} />
+                <Typography variant="body2">With Bonus ({employeesWithBonus2025})</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 15, height: 15, borderRadius: "3px", bgcolor: "#ff9800" }} />
+                <Typography variant="body2">Without Bonus ({employeesWithoutBonus})</Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
     </Box>
   );
 };

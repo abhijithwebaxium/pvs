@@ -32,6 +32,7 @@ const Employees = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("");
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -87,8 +88,13 @@ const Employees = () => {
       filtered = filtered.filter((emp) => emp.isActive === isActive);
     }
 
+    // Company filter
+    if (selectedCompany) {
+      filtered = filtered.filter((emp) => emp.company === selectedCompany);
+    }
+
     setFilteredEmployees(filtered);
-  }, [searchQuery, selectedRole, selectedStatus, employees]);
+  }, [searchQuery, selectedRole, selectedStatus, selectedCompany, employees]);
 
   const handleAddEmployee = () => {
     setOpenModal(true);
@@ -115,6 +121,13 @@ const Employees = () => {
     setOpenUploadModal(false);
     fetchEmployees(); // Refresh the list
   };
+
+  // Extract unique companies from all employees
+  const uniqueCompanies = [
+    ...new Set(
+      employees.map((emp) => emp.company).filter((name) => name)
+    ),
+  ].sort();
 
   const columns = [
     {
@@ -265,6 +278,23 @@ const Employees = () => {
                 ),
               }}
             />
+
+            {/* Company Filter */}
+            <TextField
+              select
+              size="small"
+              label="Company"
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">All Companies</MenuItem>
+              {uniqueCompanies.map((name) => (
+                <MenuItem key={name} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </TextField>
 
             {/* Role Filter */}
             <TextField

@@ -67,6 +67,7 @@ const Approvals = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedSupervisor, setSelectedSupervisor] = useState(""); // Supervisor State
+  const [selectedCompany, setSelectedCompany] = useState(""); // Company State
 
   // Bulk approval states
   const [bulkApprovalDialog, setBulkApprovalDialog] = useState({
@@ -870,6 +871,13 @@ const Approvals = () => {
     ),
   ].sort();
 
+  // Extract unique companies
+  const uniqueCompanies = [
+    ...new Set(
+      mergedRows.map((row) => row.company).filter((name) => name),
+    ),
+  ].sort();
+
   // 1. First, apply strict filters (Search, Branch, Role, Supervisor) excluding Status
   // This gives us the "Pool" of relevant employees for the current view
   const baseFilteredRows = mergedRows.filter((row) => {
@@ -897,7 +905,13 @@ const Approvals = () => {
       supervisorMatch = row.supervisorName === selectedSupervisor;
     }
 
-    return searchMatch && roleMatch && supervisorMatch;
+    // Company Filter
+    let companyMatch = true;
+    if (selectedCompany) {
+      companyMatch = row.company === selectedCompany;
+    }
+
+    return searchMatch && roleMatch && supervisorMatch && companyMatch;
   });
 
   // 2. Determine Counts from the "Pool"
@@ -1009,8 +1023,8 @@ const Approvals = () => {
             Approval Requests
           </Typography>
 
-          {/* Status Chips */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
+          {/* Status Chips and Bonus Aggregates */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2, flexWrap: "wrap", gap: 2 }}>
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               <Chip
                 icon={<PendingActionsIcon />}
@@ -1087,7 +1101,7 @@ const Approvals = () => {
             </Box>
 
             {/* Bonus Aggregates and Approve All Button */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
                   <strong>2024 Bonus Aggregate:</strong> ${bonus2024Aggregate.toLocaleString()}
@@ -1102,7 +1116,25 @@ const Approvals = () => {
                   color="success"
                   startIcon={<CheckCircleIcon />}
                   onClick={handleOpenBulkApprovalDialog}
-                  sx={{ whiteSpace: "nowrap" }}
+                  sx={{
+                    whiteSpace: "nowrap",
+                    px: 3,
+                    py: 1,
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    background: "linear-gradient(135deg, #4caf50 0%, #45a049 100%)",
+                    boxShadow: "0 4px 12px rgba(76, 175, 80, 0.3)",
+                    color: "#ffffff",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #45a049 0%, #3d8b40 100%)",
+                      boxShadow: "0 6px 16px rgba(76, 175, 80, 0.4)",
+                      transform: "translateY(-2px)",
+                    },
+                    "&:active": {
+                      transform: "translateY(0px)",
+                    },
+                    transition: "all 0.2s ease-in-out",
+                  }}
                 >
                   Approve All
                 </Button>
@@ -1130,8 +1162,26 @@ const Approvals = () => {
               gap: 2,
             }}
           >
-            {/* Left Side - Supervisor Filter */}
-            <Box>
+            {/* Left Side - Company and Supervisor Filters */}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              {/* Company Filter */}
+              <TextField
+                select
+                size="small"
+                label="Company"
+                value={selectedCompany}
+                onChange={(e) => setSelectedCompany(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">All Companies</MenuItem>
+                {uniqueCompanies.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              {/* Supervisor Filter */}
               <TextField
                 select
                 size="small"
@@ -1149,7 +1199,7 @@ const Approvals = () => {
               </TextField>
             </Box>
 
-            {/* Right Side - Branch, Role, and Search Filters */}
+            {/* Right Side - Role and Search Filters */}
             <Box
               sx={{
                 display: "flex",
