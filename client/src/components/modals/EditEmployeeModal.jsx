@@ -11,11 +11,7 @@ import {
   Slide,
   Grid,
   MenuItem,
-  InputAdornment,
-  IconButton,
-  Autocomplete,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
 import api from "../../utils/api";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -28,42 +24,24 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
     firstName: "",
     lastName: "",
     email: "",
-    password: "",
     role: "employee",
+    ssn: "",
+    company: "",
+    companyCode: "",
+    location: "",
+    jobTitle: "",
+    employeeType: "",
+    salaryType: "",
+    annualSalary: "",
+    hourlyPayRate: "",
     bonus2024: "",
-    supervisor: "",
-    level1Approver: "",
-    level2Approver: "",
-    level3Approver: "",
-    level4Approver: "",
-    level5Approver: "",
+    bonus2025: "",
+    lastHireDate: "",
+    state: "",
     isActive: true,
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [employees, setEmployees] = useState([]);
-  const [approvers, setApprovers] = useState([]);
-
-  // Fetch employees and approvers for dropdowns
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [employeesRes, approversRes] = await Promise.all([
-          api.get("/api/employees"),
-          api.get("/api/employees?role=approver"),
-        ]);
-        setEmployees(employeesRes.data.data || []);
-        setApprovers(approversRes.data.data || []);
-      } catch (err) {
-        console.error("Error fetching employees/approvers:", err);
-      }
-    };
-
-    if (open) {
-      fetchData();
-    }
-  }, [open]);
 
   // Populate form when employee prop changes
   useEffect(() => {
@@ -73,15 +51,20 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
         firstName: employee.firstName || "",
         lastName: employee.lastName || "",
         email: employee.email || "",
-        password: "", // Don't populate password for security
         role: employee.role || "employee",
+        ssn: employee.ssn || "",
+        company: employee.company || "",
+        companyCode: employee.companyCode || "",
+        location: employee.location || "",
+        jobTitle: employee.jobTitle || "",
+        employeeType: employee.employeeType || "",
+        salaryType: employee.salaryType || "",
+        annualSalary: employee.annualSalary || "",
+        hourlyPayRate: employee.hourlyPayRate || "",
         bonus2024: employee.bonus2024 || "",
-        supervisor: employee.supervisor?._id || "",
-        level1Approver: employee.level1Approver?._id || "",
-        level2Approver: employee.level2Approver?._id || "",
-        level3Approver: employee.level3Approver?._id || "",
-        level4Approver: employee.level4Approver?._id || "",
-        level5Approver: employee.level5Approver?._id || "",
+        bonus2025: employee.bonus2025 || "",
+        lastHireDate: employee.lastHireDate || "",
+        state: employee.address?.state || "",
         isActive: employee.isActive !== undefined ? employee.isActive : true,
       });
       setError("");
@@ -114,12 +97,6 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
       return;
     }
 
-    // Only validate password if it's being changed
-    if (formData.password && formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -129,20 +106,23 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
         lastName: formData.lastName,
         email: formData.email,
         role: formData.role,
+        ssn: formData.ssn || undefined,
+        company: formData.company || undefined,
+        companyCode: formData.companyCode || undefined,
+        location: formData.location || undefined,
+        jobTitle: formData.jobTitle || undefined,
+        employeeType: formData.employeeType || undefined,
+        salaryType: formData.salaryType || undefined,
+        annualSalary: formData.annualSalary ? parseFloat(formData.annualSalary) : undefined,
+        hourlyPayRate: formData.hourlyPayRate ? parseFloat(formData.hourlyPayRate) : undefined,
+        bonus2024: formData.bonus2024 ? parseFloat(formData.bonus2024) : undefined,
+        bonus2025: formData.bonus2025 ? parseFloat(formData.bonus2025) : undefined,
+        lastHireDate: formData.lastHireDate || undefined,
         isActive: formData.isActive,
-        bonus2024: formData.bonus2024 || undefined,
-        supervisor: formData.supervisor || undefined,
-        level1Approver: formData.level1Approver || undefined,
-        level2Approver: formData.level2Approver || undefined,
-        level3Approver: formData.level3Approver || undefined,
-        level4Approver: formData.level4Approver || undefined,
-        level5Approver: formData.level5Approver || undefined,
+        address: {
+          state: formData.state || "",
+        },
       };
-
-      // Only include password if it's being changed
-      if (formData.password) {
-        payload.password = formData.password;
-      }
 
       await api.put(`/api/employees/${employee._id}`, payload);
 
@@ -152,18 +132,22 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
         role: "employee",
+        ssn: "",
+        company: "",
+        companyCode: "",
+        location: "",
+        jobTitle: "",
+        employeeType: "",
+        salaryType: "",
+        annualSalary: "",
+        hourlyPayRate: "",
         bonus2024: "",
-        supervisor: "",
-        level1Approver: "",
-        level2Approver: "",
-        level3Approver: "",
-        level4Approver: "",
-        level5Approver: "",
+        bonus2025: "",
+        lastHireDate: "",
+        state: "",
         isActive: true,
       });
-      setShowPassword(false);
 
       onEmployeeUpdated();
     } catch (err) {
@@ -184,18 +168,22 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
         role: "employee",
+        ssn: "",
+        company: "",
+        companyCode: "",
+        location: "",
+        jobTitle: "",
+        employeeType: "",
+        salaryType: "",
+        annualSalary: "",
+        hourlyPayRate: "",
         bonus2024: "",
-        supervisor: "",
-        level1Approver: "",
-        level2Approver: "",
-        level3Approver: "",
-        level4Approver: "",
-        level5Approver: "",
+        bonus2025: "",
+        lastHireDate: "",
+        state: "",
         isActive: true,
       });
-      setShowPassword(false);
       setError("");
       onClose();
     }
@@ -285,29 +273,70 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12}>
+
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                name="password"
-                label="Password (leave blank to keep current)"
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
+                name="ssn"
+                label="SSN"
+                value={formData.ssn}
                 onChange={handleChange}
                 disabled={loading}
-                helperText="Only fill this if you want to change the password"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="company"
+                label="Company"
+                value={formData.company}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="companyCode"
+                label="Company Code"
+                value={formData.companyCode}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="location"
+                label="Location"
+                value={formData.location}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="jobTitle"
+                label="Job Title"
+                value={formData.jobTitle}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="employeeType"
+                label="Employee Type"
+                value={formData.employeeType}
+                onChange={handleChange}
+                disabled={loading}
               />
             </Grid>
 
@@ -315,16 +344,42 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
               <TextField
                 fullWidth
                 select
-                name="isActive"
-                label="Status"
-                value={formData.isActive.toString()}
+                name="salaryType"
+                label="Salary Type"
+                value={formData.salaryType}
                 onChange={handleChange}
                 disabled={loading}
               >
-                <MenuItem value="true">Active</MenuItem>
-                <MenuItem value="false">Inactive</MenuItem>
+                <MenuItem value="">Select Type</MenuItem>
+                <MenuItem value="Salary">Salary</MenuItem>
+                <MenuItem value="Hourly">Hourly</MenuItem>
               </TextField>
             </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="annualSalary"
+                label="Annual Salary"
+                type="number"
+                value={formData.annualSalary}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="hourlyPayRate"
+                label="Hourly Pay Rate"
+                type="number"
+                value={formData.hourlyPayRate}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -337,222 +392,57 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
               />
             </Grid>
 
-            <Grid item xs={12}>
-              <Autocomplete
-                options={employees}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={
-                  employees.find((emp) => emp._id === formData.supervisor) ||
-                  null
-                }
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    supervisor: newValue?._id || "",
-                  });
-                }}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="bonus2025"
+                label="2025 Bonus"
+                type="number"
+                value={formData.bonus2025}
+                onChange={handleChange}
                 disabled={loading}
-                sx={{ width: 220 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Supervisor"
-                    placeholder="Search supervisor..."
-                  />
-                )}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                ListboxProps={{
-                  style: { maxHeight: 200 },
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="lastHireDate"
+                label="Last Hire Date"
+                type="date"
+                value={formData.lastHireDate}
+                onChange={handleChange}
+                disabled={loading}
+                InputLabelProps={{
+                  shrink: true,
                 }}
               />
             </Grid>
 
-            {/* Approver Hierarchy */}
-            <Grid item xs={12}>
-              <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={
-                  approvers.find(
-                    (app) => app._id === formData.level1Approver,
-                  ) || null
-                }
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    level1Approver: newValue?._id || "",
-                  });
-                }}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                name="state"
+                label="State/Province"
+                value={formData.state}
+                onChange={handleChange}
                 disabled={loading}
-                sx={{ width: 220 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Level 1 Approver"
-                    placeholder="Search level 1 approver..."
-                  />
-                )}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                ListboxProps={{
-                  style: { maxHeight: 200 },
-                }}
               />
             </Grid>
+
             <Grid item xs={12}>
-              <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={
-                  approvers.find(
-                    (app) => app._id === formData.level2Approver,
-                  ) || null
-                }
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    level2Approver: newValue?._id || "",
-                  });
-                }}
+              <TextField
+                fullWidth
+                select
+                name="isActive"
+                label="Status"
+                value={formData.isActive.toString()}
+                onChange={handleChange}
                 disabled={loading}
-                sx={{ width: 220 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Level 2 Approver"
-                    placeholder="Search level 2 approver..."
-                  />
-                )}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                ListboxProps={{
-                  style: { maxHeight: 200 },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={
-                  approvers.find(
-                    (app) => app._id === formData.level3Approver,
-                  ) || null
-                }
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    level3Approver: newValue?._id || "",
-                  });
-                }}
-                disabled={loading}
-                sx={{ width: 220 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Level 3 Approver"
-                    placeholder="Search level 3 approver..."
-                  />
-                )}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                ListboxProps={{
-                  style: { maxHeight: 200 },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={
-                  approvers.find(
-                    (app) => app._id === formData.level4Approver,
-                  ) || null
-                }
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    level4Approver: newValue?._id || "",
-                  });
-                }}
-                disabled={loading}
-                sx={{ width: 220 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Level 4 Approver"
-                    placeholder="Search level 4 approver..."
-                  />
-                )}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                ListboxProps={{
-                  style: { maxHeight: 200 },
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={
-                  approvers.find(
-                    (app) => app._id === formData.level5Approver,
-                  ) || null
-                }
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    level5Approver: newValue?._id || "",
-                  });
-                }}
-                disabled={loading}
-                sx={{ width: 220 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Level 5 Approver"
-                    placeholder="Search level 5 approver..."
-                  />
-                )}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                ListboxProps={{
-                  style: { maxHeight: 200 },
-                }}
-              />
+              >
+                <MenuItem value="true">Active</MenuItem>
+                <MenuItem value="false">Inactive</MenuItem>
+              </TextField>
             </Grid>
           </Grid>
         </Box>

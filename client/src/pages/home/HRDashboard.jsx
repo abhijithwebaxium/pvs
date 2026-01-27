@@ -12,14 +12,18 @@ import {
   MenuItem,
   InputAdornment,
   LinearProgress,
+  Button,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { PieChart } from "@mui/x-charts/PieChart";
+import { BarChart } from "@mui/x-charts/BarChart";
 import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import EditIcon from "@mui/icons-material/Edit";
 import useDashboardStats from "../../hooks/useDashboardStats";
 import api from "../../utils/api";
+import EditEmployeeBonusModal from "../../components/modals/EditEmployeeBonusModal";
 
 const HRDashboard = ({ user }) => {
   const {
@@ -31,6 +35,8 @@ const HRDashboard = ({ user }) => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,6 +107,40 @@ const HRDashboard = ({ user }) => {
 
     setFilteredEmployees(filtered);
   }, [searchQuery, selectedRole, selectedStatus, selectedSupervisor, selectedCompany, employees]);
+
+  const handleEditClick = (employee) => {
+    setSelectedEmployee(employee);
+    setOpenEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setOpenEditModal(false);
+    setSelectedEmployee(null);
+  };
+
+  const handleEmployeeUpdated = () => {
+    setOpenEditModal(false);
+    setSelectedEmployee(null);
+    // Refresh the employee list
+    const fetchEmployees = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const response = await api.get("/api/employees");
+        setEmployees(response.data.data);
+        setFilteredEmployees(response.data.data);
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "An error occurred while fetching employees"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEmployees();
+  };
 
   // Extract unique supervisors from all employees
   const uniqueSupervisors = [
@@ -301,15 +341,6 @@ const HRDashboard = ({ user }) => {
       renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
     },
     {
-      field: "hourlyPayRate",
-      headerName: "Hourly Rate",
-      width: 130,
-      renderCell: (params) => {
-        const rate = params.value || 0;
-        return rate > 0 ? `$${rate.toFixed(2)}` : "N/A";
-      },
-    },
-    {
       field: "bonus2024",
       headerName: "2024 Bonus",
       width: 130,
@@ -410,6 +441,22 @@ const HRDashboard = ({ user }) => {
           <Typography sx={{ color, mt: 1 }}>{approverName}</Typography>
         );
       },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 120,
+      sortable: false,
+      renderCell: (params) => (
+        <Button
+          startIcon={<EditIcon />}
+          color="primary"
+          onClick={() => handleEditClick(params.row)}
+          size="small"
+        >
+          Edit
+        </Button>
+      ),
     },
   ];
 
@@ -885,7 +932,7 @@ const HRDashboard = ({ user }) => {
             </Typography>
           </Box>
 
-          <Box sx={{ height: 400, width: "100%" }}>
+          <Box sx={{ height: 750, width: "100%" }}>
             <DataGrid
               rows={supervisorStats}
               columns={supervisorColumns}
@@ -893,10 +940,10 @@ const HRDashboard = ({ user }) => {
               loading={loading}
               initialState={{
                 pagination: {
-                  paginationModel: { pageSize: 5, page: 0 },
+                  paginationModel: { pageSize: 12, page: 0 },
                 },
               }}
-              pageSizeOptions={[5, 10, 25, 50, 100, 150, 200]}
+              pageSizeOptions={[5, 10, 15, 25, 50, 100, 150, 200]}
               disableRowSelectionOnClick
               sx={{
                 border: 0,
@@ -914,93 +961,161 @@ const HRDashboard = ({ user }) => {
           </Box>
         </Paper>
 
-        {/* Bonus Allocation Donut Chart */}
-        <Paper
-          sx={{
-            width: "400px",
-            borderRadius: "16px",
-            overflow: "hidden",
-            boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
-            border: "1px solid",
-            borderColor: "divider",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-            <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
-              Bonus Allocation Overview
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Distribution of 2025 bonus allocation
-            </Typography>
-          </Box>
-
-          <Box
+        {/* Charts Column */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "400px" }}>
+          {/* Bonus Allocation Donut Chart */}
+          <Paper
             sx={{
-              flex: 1,
+              borderRadius: "16px",
+              overflow: "hidden",
+              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+              border: "1px solid",
+              borderColor: "divider",
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              p: 2,
-              position: "relative",
             }}
           >
-            <Box sx={{ position: "relative" }}>
-              <PieChart
+            <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
+                Bonus Allocation Overview
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Distribution of 2025 bonus allocation
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 2,
+                position: "relative",
+              }}
+            >
+              <Box sx={{ position: "relative" }}>
+                <PieChart
+                  series={[
+                    {
+                      data: bonusChartData,
+                      innerRadius: 80,
+                      outerRadius: 120,
+                      paddingAngle: 2,
+                      cornerRadius: 5,
+                      highlightScope: { faded: "global", highlighted: "item" },
+                    },
+                  ]}
+                  width={380}
+                  height={300}
+                  slotProps={{
+                    legend: {
+                      hidden: true,
+                    },
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    textAlign: "center",
+                  }}
+                >
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: "primary.main" }}>
+                    {totalActiveEmployees > 0
+                      ? ((employeesWithBonus2025 / totalActiveEmployees) * 100).toFixed(1)
+                      : 0}%
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Overall Allocation
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Custom Legend */}
+              <Box sx={{ display: "flex", gap: 3, mt: 2, justifyContent: "center" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ width: 15, height: 15, borderRadius: "3px", bgcolor: "#4caf50" }} />
+                  <Typography variant="body2">With Bonus ({employeesWithBonus2025})</Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ width: 15, height: 15, borderRadius: "3px", bgcolor: "#ff9800" }} />
+                  <Typography variant="body2">Without Bonus ({employeesWithoutBonus})</Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Bar Chart for 2024 and 2025 Bonus Aggregates */}
+          <Paper
+            sx={{
+              borderRadius: "16px",
+              overflow: "hidden",
+              boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+              border: "1px solid",
+              borderColor: "divider",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
+                Bonus Comparison
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Total bonus aggregates for 2024 and 2025
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 2,
+              }}
+            >
+              <BarChart
+                xAxis={[
+                  {
+                    scaleType: "band",
+                    data: ["2024 Bonus", "2025 Bonus"],
+                  },
+                ]}
                 series={[
                   {
-                    data: bonusChartData,
-                    innerRadius: 80,
-                    outerRadius: 120,
-                    paddingAngle: 2,
-                    cornerRadius: 5,
-                    highlightScope: { faded: "global", highlighted: "item" },
+                    data: [totalBonus2024],
+                    color: "#2196f3",
+                  },
+                  {
+                    data: [null, totalBonus2025],
+                    color: "#4caf50",
                   },
                 ]}
                 width={380}
-                height={300}
+                height={280}
                 slotProps={{
                   legend: {
                     hidden: true,
                   },
                 }}
               />
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  textAlign: "center",
-                }}
-              >
-                <Typography variant="h4" sx={{ fontWeight: 700, color: "primary.main" }}>
-                  {totalActiveEmployees > 0
-                    ? ((employeesWithBonus2025 / totalActiveEmployees) * 100).toFixed(1)
-                    : 0}%
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Overall Allocation
-                </Typography>
-              </Box>
             </Box>
-
-            {/* Custom Legend */}
-            <Box sx={{ display: "flex", gap: 3, mt: 2, justifyContent: "center" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box sx={{ width: 15, height: 15, borderRadius: "3px", bgcolor: "#4caf50" }} />
-                <Typography variant="body2">With Bonus ({employeesWithBonus2025})</Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box sx={{ width: 15, height: 15, borderRadius: "3px", bgcolor: "#ff9800" }} />
-                <Typography variant="body2">Without Bonus ({employeesWithoutBonus})</Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Paper>
+          </Paper>
+        </Box>
       </Box>
+
+      <EditEmployeeBonusModal
+        open={openEditModal}
+        onClose={handleCloseEditModal}
+        onEmployeeUpdated={handleEmployeeUpdated}
+        employee={selectedEmployee}
+      />
     </Box>
   );
 };

@@ -207,17 +207,6 @@ const Employees = () => {
       },
     },
     {
-      field: "hourlyPayRate",
-      headerName: "Hourly Rate",
-      width: 130,
-      minWidth: 120,
-      flex: 0.7,
-      renderCell: (params) => {
-        const rate = params.value || 0;
-        return rate > 0 ? `$${rate.toFixed(2)}` : "N/A";
-      },
-    },
-    {
       field: "role",
       headerName: "Role",
       width: 120,
