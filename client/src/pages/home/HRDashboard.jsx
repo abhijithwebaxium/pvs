@@ -17,6 +17,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { PieChart } from "@mui/x-charts/PieChart";
 import PeopleIcon from "@mui/icons-material/People";
 import SearchIcon from "@mui/icons-material/Search";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import useDashboardStats from "../../hooks/useDashboardStats";
 import api from "../../utils/api";
 
@@ -181,6 +182,10 @@ const HRDashboard = ({ user }) => {
     return emp.level1Approver || emp.level2Approver || emp.level3Approver || emp.level4Approver || emp.level5Approver;
   }).length;
 
+  // Calculate total bonus aggregates for all employees
+  const totalBonus2024 = employees.reduce((sum, emp) => sum + (parseFloat(emp.bonus2024) || 0), 0);
+  const totalBonus2025 = employees.reduce((sum, emp) => sum + (parseFloat(emp.bonus2025) || 0), 0);
+
   // Supervisor table columns
   const supervisorColumns = [
     {
@@ -299,7 +304,10 @@ const HRDashboard = ({ user }) => {
       field: "hourlyPayRate",
       headerName: "Hourly Rate",
       width: 130,
-      renderCell: (params) => `$${(params.value || 0).toLocaleString()}`,
+      renderCell: (params) => {
+        const rate = params.value || 0;
+        return rate > 0 ? `$${rate.toFixed(2)}` : "N/A";
+      },
     },
     {
       field: "bonus2024",
@@ -418,7 +426,7 @@ const HRDashboard = ({ user }) => {
   return (
     <Box sx={{ pb: 4 }}>
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
               height: "100%",
@@ -488,7 +496,7 @@ const HRDashboard = ({ user }) => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
               height: "100%",
@@ -551,6 +559,146 @@ const HRDashboard = ({ user }) => {
                     }}
                   >
                     Out of {totalEmployees} employees
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card
+            sx={{
+              height: "100%",
+              background: "linear-gradient(135deg, hsl(210, 100%, 95%) 0%, hsl(210, 100%, 92%) 100%)",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "primary.light",
+              boxShadow: "0 4px 20px 0 rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: "0 8px 30px 0 rgba(33, 150, 243, 0.15)",
+              },
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      backgroundColor: "primary.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AttachMoneyIcon sx={{ fontSize: 28, color: "white" }} />
+                  </Box>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    2024 Bonus Total
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 700,
+                      mb: 0.5,
+                    }}
+                  >
+                    {loading ? <CircularProgress size={30} sx={{ color: "primary.main" }} /> : `$${totalBonus2024.toLocaleString()}`}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Total bonus for 2024
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card
+            sx={{
+              height: "100%",
+              background: "linear-gradient(135deg, hsl(210, 100%, 95%) 0%, hsl(210, 100%, 92%) 100%)",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "primary.light",
+              boxShadow: "0 4px 20px 0 rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-4px)",
+                boxShadow: "0 8px 30px 0 rgba(33, 150, 243, 0.15)",
+              },
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      backgroundColor: "primary.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AttachMoneyIcon sx={{ fontSize: 28, color: "white" }} />
+                  </Box>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    2025 Bonus Total
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      color: "primary.dark",
+                      fontWeight: 700,
+                      mb: 0.5,
+                    }}
+                  >
+                    {loading ? <CircularProgress size={30} sx={{ color: "primary.main" }} /> : `$${totalBonus2025.toLocaleString()}`}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Total bonus for 2025
                   </Typography>
                 </Box>
               </Box>
@@ -691,12 +839,13 @@ const HRDashboard = ({ user }) => {
             columns={columns}
             getRowId={(row) => row._id}
             loading={loading}
+            paginationMode="client"
             initialState={{
               pagination: {
                 paginationModel: { pageSize: 10, page: 0 },
               },
             }}
-            pageSizeOptions={[10, 25, 50]}
+            pageSizeOptions={[10, 25, 50, 100, 150, 200]}
             disableRowSelectionOnClick
             sx={{
               border: 0,
@@ -747,7 +896,7 @@ const HRDashboard = ({ user }) => {
                   paginationModel: { pageSize: 5, page: 0 },
                 },
               }}
-              pageSizeOptions={[5, 10, 25]}
+              pageSizeOptions={[5, 10, 25, 50, 100, 150, 200]}
               disableRowSelectionOnClick
               sx={{
                 border: 0,

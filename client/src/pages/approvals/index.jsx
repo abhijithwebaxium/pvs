@@ -680,15 +680,28 @@ const Approvals = () => {
             const status =
               params.row.approvalStatus?.[`level${i}`]?.status || "pending";
             const approver = params.row[`level${i}Approver`];
+
+            // Helper to get ordinal text
+            const getOrdinalText = (num) => {
+              const ordinals = ["first", "second", "third", "fourth", "fifth"];
+              return ordinals[num - 1] || `${num}th`;
+            };
+
             const approverName =
               approver && approver.firstName
-                ? `${approver.lastName || ""}, ${approver.firstName} (${approver.employeeId || "N/A"})`
-                : params.row[`level${i}ApproverName`] || "Assigned";
+                ? `${approver.firstName} ${approver.lastName || ""}`
+                : params.row[`level${i}ApproverName`] && params.row[`level${i}ApproverName`] !== "N/A"
+                  ? params.row[`level${i}ApproverName`]
+                  : `No ${getOrdinalText(i)} approver`;
+            const comments = params.row.approvalStatus?.[`level${i}`]?.comments || null;
+            const hasApprover = approver && approver.firstName;
             history.push({
               level: i,
               status,
               approverName,
+              comments,
               isCurrent: i === currentLevel,
+              hasApprover,
             });
           }
         }
@@ -709,14 +722,14 @@ const Approvals = () => {
             {history.length === 0 ? (
               <Typography variant="caption">Initial approval level</Typography>
             ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {history.map((h) => (
                   <Box
                     key={h.level}
                     sx={{
                       display: "flex",
-                      alignItems: "center",
-                      gap: 1,
+                      flexDirection: "column",
+                      gap: 0.5,
                       p: h.isCurrent ? 0.5 : 0,
                       borderRadius: 1,
                       bgcolor: h.isCurrent
@@ -727,40 +740,78 @@ const Approvals = () => {
                         : "none",
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        minWidth: 50,
-                        fontWeight: h.isCurrent ? "bold" : "normal",
-                      }}
-                    >
-                      Level {h.level}:
-                    </Typography>
-                    <Chip
-                      label={
-                        h.status === "approved"
-                          ? "APPROVED"
-                          : h.status === "rejected"
-                            ? "REJECTED"
-                            : "NOT APPROVED"
-                      }
-                      size="small"
-                      color={
-                        h.status === "approved"
-                          ? "success"
-                          : h.status === "rejected"
-                            ? "error"
-                            : "default"
-                      }
-                      sx={{ height: 20, fontSize: "0.65rem" }}
-                    />
-                    <Typography
-                      variant="caption"
-                      color="inherit"
-                      sx={{ fontStyle: "italic", ml: 0.5 }}
-                    >
-                      by {h.approverName}
-                    </Typography>
+                    {h.hasApprover ? (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            minWidth: 50,
+                            fontWeight: h.isCurrent ? "bold" : "normal",
+                          }}
+                        >
+                          Level {h.level}:
+                        </Typography>
+                        <Chip
+                          label={
+                            h.status === "approved"
+                              ? "APPROVED"
+                              : h.status === "rejected"
+                                ? "REJECTED"
+                                : "NOT APPROVED"
+                          }
+                          size="small"
+                          color={
+                            h.status === "approved"
+                              ? "success"
+                              : h.status === "rejected"
+                                ? "error"
+                                : "default"
+                          }
+                          sx={{ height: 20, fontSize: "0.65rem" }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color="inherit"
+                          sx={{ fontStyle: "italic", ml: 0.5 }}
+                        >
+                          by {h.approverName}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            minWidth: 50,
+                            fontWeight: h.isCurrent ? "bold" : "normal",
+                            color: "rgba(255,255,255,0.9)",
+                          }}
+                        >
+                          Level {h.level}:
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontStyle: "italic",
+                            color: "rgba(255,255,255,0.8)",
+                          }}
+                        >
+                          {h.approverName}
+                        </Typography>
+                      </Box>
+                    )}
+                    {h.comments && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          ml: 6.5,
+                          fontStyle: "italic",
+                          color: "rgba(255,255,255,0.7)",
+                        }}
+                      >
+                        "{h.comments}"
+                      </Typography>
+                    )}
                   </Box>
                 ))}
               </Box>
@@ -962,6 +1013,19 @@ const Approvals = () => {
     0
   );
 
+  // Count employees that can actually be approved (have bonus and previous levels approved)
+  const approvableCount = baseFilteredRows.filter((row) => {
+    const status =
+      row.approvalStatus?.[`level${row.currentPendingLevel}`]?.status ||
+      "pending";
+    // Only count pending employees
+    if (status !== "pending") return false;
+
+    // Check if they can be approved using the canApprove function
+    const approvalState = canApprove(row, row.currentPendingLevel);
+    return approvalState.can;
+  }).length;
+
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Box
@@ -1110,35 +1174,59 @@ const Approvals = () => {
                   <strong>2025 Bonus Aggregate:</strong> ${bonus2025Aggregate.toLocaleString()}
                 </Typography>
               </Box>
-              {totalPending > 0 && (
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<CheckCircleIcon />}
-                  onClick={handleOpenBulkApprovalDialog}
-                  sx={{
-                    whiteSpace: "nowrap",
-                    px: 3,
-                    py: 1,
-                    fontWeight: 600,
-                    fontSize: "0.9rem",
-                    background: "linear-gradient(135deg, #4caf50 0%, #45a049 100%)",
-                    boxShadow: "0 4px 12px rgba(76, 175, 80, 0.3)",
-                    color: "#ffffff",
-                    "&:hover": {
-                      background: "linear-gradient(135deg, #45a049 0%, #3d8b40 100%)",
-                      boxShadow: "0 6px 16px rgba(76, 175, 80, 0.4)",
-                      transform: "translateY(-2px)",
-                    },
-                    "&:active": {
-                      transform: "translateY(0px)",
-                    },
-                    transition: "all 0.2s ease-in-out",
-                  }}
-                >
-                  Approve All
-                </Button>
-              )}
+              <Tooltip
+                title={
+                  approvableCount === 0
+                    ? totalPending === 0
+                      ? "There is no one to approve"
+                      : "All pending employees need bonus allocation or previous level approvals"
+                    : "Approve all eligible pending bonuses"
+                }
+                arrow
+              >
+                <span>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<CheckCircleIcon />}
+                    onClick={handleOpenBulkApprovalDialog}
+                    disabled={approvableCount === 0}
+                    sx={{
+                      whiteSpace: "nowrap",
+                      px: 3,
+                      py: 1,
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                      background: approvableCount > 0
+                        ? "linear-gradient(135deg, #4caf50 0%, #45a049 100%)"
+                        : "rgba(0, 0, 0, 0.12)",
+                      boxShadow: approvableCount > 0
+                        ? "0 4px 12px rgba(76, 175, 80, 0.3)"
+                        : "none",
+                      color: "#ffffff",
+                      "&:hover": {
+                        background: approvableCount > 0
+                          ? "linear-gradient(135deg, #45a049 0%, #3d8b40 100%)"
+                          : "rgba(0, 0, 0, 0.12)",
+                        boxShadow: approvableCount > 0
+                          ? "0 6px 16px rgba(76, 175, 80, 0.4)"
+                          : "none",
+                        transform: approvableCount > 0 ? "translateY(-2px)" : "none",
+                      },
+                      "&:active": {
+                        transform: approvableCount > 0 ? "translateY(0px)" : "none",
+                      },
+                      "&.Mui-disabled": {
+                        background: "rgba(0, 0, 0, 0.12)",
+                        color: "rgba(0, 0, 0, 0.26)",
+                      },
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                  >
+                    Approve All
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
           </Box>
 
@@ -1292,7 +1380,7 @@ const Approvals = () => {
                     paginationModel: { pageSize: 10, page: 0 },
                   },
                 }}
-                pageSizeOptions={[5, 10, 25, 50]}
+                pageSizeOptions={[5, 10, 25, 50, 100, 150, 200]}
                 disableRowSelectionOnClick
                 sx={{
                   border: 0,

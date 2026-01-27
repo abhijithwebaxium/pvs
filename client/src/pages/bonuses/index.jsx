@@ -556,7 +556,7 @@ const Bonuses = () => {
                 paginationModel: { pageSize: 10, page: 0 },
               },
             }}
-            pageSizeOptions={[5, 10, 25, 50]}
+            pageSizeOptions={[5, 10, 25, 50, 100, 150, 200]}
             disableRowSelectionOnClick
             sx={{
               border: 0,

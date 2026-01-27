@@ -22,7 +22,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
+const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
   const [formData, setFormData] = useState({
     employeeId: "",
     firstName: "",
@@ -30,51 +30,71 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
     email: "",
     password: "",
     role: "employee",
-    ssn: "",
-    company: "",
-    companyCode: "",
-    supervisorName: "",
-    location: "",
-    jobTitle: "",
-    employeeType: "",
-    salaryType: "",
-    annualSalary: "",
-    hourlyPayRate: "",
     bonus2024: "",
-    bonus2025: "",
-    lastHireDate: "",
-    state: "",
+    supervisor: "",
     level1Approver: "",
     level2Approver: "",
     level3Approver: "",
     level4Approver: "",
     level5Approver: "",
+    isActive: true,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [employees, setEmployees] = useState([]);
   const [approvers, setApprovers] = useState([]);
 
-  // Fetch approvers for dropdowns
+  // Fetch employees and approvers for dropdowns
   useEffect(() => {
-    const fetchApprovers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get("/api/employees?role=approver");
-        setApprovers(response.data.data || []);
+        const [employeesRes, approversRes] = await Promise.all([
+          api.get("/api/employees"),
+          api.get("/api/employees?role=approver"),
+        ]);
+        setEmployees(employeesRes.data.data || []);
+        setApprovers(approversRes.data.data || []);
       } catch (err) {
-        console.error("Error fetching approvers:", err);
+        console.error("Error fetching employees/approvers:", err);
       }
     };
 
     if (open) {
-      fetchApprovers();
+      fetchData();
     }
   }, [open]);
 
+  // Populate form when employee prop changes
+  useEffect(() => {
+    if (employee && open) {
+      setFormData({
+        employeeId: employee.employeeId || "",
+        firstName: employee.firstName || "",
+        lastName: employee.lastName || "",
+        email: employee.email || "",
+        password: "", // Don't populate password for security
+        role: employee.role || "employee",
+        bonus2024: employee.bonus2024 || "",
+        supervisor: employee.supervisor?._id || "",
+        level1Approver: employee.level1Approver?._id || "",
+        level2Approver: employee.level2Approver?._id || "",
+        level3Approver: employee.level3Approver?._id || "",
+        level4Approver: employee.level4Approver?._id || "",
+        level5Approver: employee.level5Approver?._id || "",
+        isActive: employee.isActive !== undefined ? employee.isActive : true,
+      });
+      setError("");
+    }
+  }, [employee, open]);
+
   const handleChange = (e) => {
+    const value =
+      e.target.name === "isActive" ? e.target.value === "true" : e.target.value;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
     setError("");
   };
@@ -88,14 +108,14 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
       !formData.employeeId ||
       !formData.firstName ||
       !formData.lastName ||
-      !formData.email ||
-      !formData.password
+      !formData.email
     ) {
-      setError("Employee ID, Name, Email, and Password are required");
+      setError("Employee ID, Name, and Email are required");
       return;
     }
 
-    if (formData.password.length < 6) {
+    // Only validate password if it's being changed
+    if (formData.password && formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
       return;
     }
@@ -108,36 +128,23 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        password: formData.password,
         role: formData.role,
-        ssn: formData.ssn || undefined,
-        company: formData.company || undefined,
-        companyCode: formData.companyCode || undefined,
-        supervisorName: formData.supervisorName || undefined,
-        location: formData.location || undefined,
-        jobTitle: formData.jobTitle || undefined,
-        employeeType: formData.employeeType || undefined,
-        salaryType: formData.salaryType || undefined,
-        annualSalary: formData.annualSalary ? parseFloat(formData.annualSalary) : undefined,
-        hourlyPayRate: formData.hourlyPayRate ? parseFloat(formData.hourlyPayRate) : undefined,
-        bonus2024: formData.bonus2024 ? parseFloat(formData.bonus2024) : undefined,
-        bonus2025: formData.bonus2025 ? parseFloat(formData.bonus2025) : undefined,
-        lastHireDate: formData.lastHireDate || undefined,
+        isActive: formData.isActive,
+        bonus2024: formData.bonus2024 || undefined,
+        supervisor: formData.supervisor || undefined,
         level1Approver: formData.level1Approver || undefined,
         level2Approver: formData.level2Approver || undefined,
         level3Approver: formData.level3Approver || undefined,
         level4Approver: formData.level4Approver || undefined,
         level5Approver: formData.level5Approver || undefined,
-        address: {
-          state: formData.state || "",
-          street: "",
-          city: "",
-          zipCode: "",
-          country: "",
-        },
       };
 
-      await api.post("/api/employees", payload);
+      // Only include password if it's being changed
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
+      await api.put(`/api/employees/${employee._id}`, payload);
 
       // Reset form
       setFormData({
@@ -147,31 +154,24 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         email: "",
         password: "",
         role: "employee",
-        ssn: "",
-        company: "",
-        companyCode: "",
-        supervisorName: "",
-        location: "",
-        jobTitle: "",
-        employeeType: "",
-        salaryType: "",
-        annualSalary: "",
-        hourlyPayRate: "",
         bonus2024: "",
-        bonus2025: "",
-        lastHireDate: "",
-        state: "",
+        supervisor: "",
         level1Approver: "",
         level2Approver: "",
         level3Approver: "",
         level4Approver: "",
         level5Approver: "",
+        isActive: true,
       });
       setShowPassword(false);
 
-      onEmployeeAdded();
+      onEmployeeUpdated();
     } catch (err) {
-      setError(err.message || "An error occurred while creating employee");
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "An error occurred while updating employee",
+      );
     } finally {
       setLoading(false);
     }
@@ -186,25 +186,14 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
         email: "",
         password: "",
         role: "employee",
-        ssn: "",
-        company: "",
-        companyCode: "",
-        supervisorName: "",
-        location: "",
-        jobTitle: "",
-        employeeType: "",
-        salaryType: "",
-        annualSalary: "",
-        hourlyPayRate: "",
         bonus2024: "",
-        bonus2025: "",
-        lastHireDate: "",
-        state: "",
+        supervisor: "",
         level1Approver: "",
         level2Approver: "",
         level3Approver: "",
         level4Approver: "",
         level5Approver: "",
+        isActive: true,
       });
       setShowPassword(false);
       setError("");
@@ -223,7 +212,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
       }}
       keepMounted
     >
-      <DialogTitle>Add New Employee</DialogTitle>
+      <DialogTitle>Edit Employee</DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -260,6 +249,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 <MenuItem value="admin">Admin</MenuItem>
               </TextField>
             </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 required
@@ -282,6 +272,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
+
             <Grid item xs={12}>
               <TextField
                 required
@@ -296,14 +287,14 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                required
                 fullWidth
                 name="password"
-                label="Password"
+                label="Password (leave blank to keep current)"
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
+                helperText="Only fill this if you want to change the password"
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -319,112 +310,20 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="ssn"
-                label="SSN"
-                value={formData.ssn}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="company"
-                label="Company"
-                value={formData.company}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="companyCode"
-                label="Company Code"
-                value={formData.companyCode}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="supervisorName"
-                label="Supervisor Name"
-                value={formData.supervisorName}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="location"
-                label="Location"
-                value={formData.location}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="jobTitle"
-                label="Job Title"
-                value={formData.jobTitle}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="employeeType"
-                label="Employee Type"
-                value={formData.employeeType}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 select
-                name="salaryType"
-                label="Salary Type"
-                value={formData.salaryType}
+                name="isActive"
+                label="Status"
+                value={formData.isActive.toString()}
                 onChange={handleChange}
                 disabled={loading}
               >
-                <MenuItem value="">Select Type</MenuItem>
-                <MenuItem value="Salary">Salary</MenuItem>
-                <MenuItem value="Hourly">Hourly</MenuItem>
+                <MenuItem value="true">Active</MenuItem>
+                <MenuItem value="false">Inactive</MenuItem>
               </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="annualSalary"
-                label="Annual Salary"
-                type="number"
-                value={formData.annualSalary}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="hourlyPayRate"
-                label="Hourly Pay Rate"
-                type="number"
-                value={formData.hourlyPayRate}
-                onChange={handleChange}
-                disabled={loading}
-              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -437,41 +336,44 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="bonus2025"
-                label="2025 Bonus"
-                type="number"
-                value={formData.bonus2025}
-                onChange={handleChange}
+
+            <Grid item xs={12}>
+              <Autocomplete
+                options={employees}
+                getOptionLabel={(option) =>
+                  option.firstName && option.lastName
+                    ? `${option.firstName} ${option.lastName}`
+                    : ""
+                }
+                value={
+                  employees.find((emp) => emp._id === formData.supervisor) ||
+                  null
+                }
+                onChange={(event, newValue) => {
+                  setFormData({
+                    ...formData,
+                    supervisor: newValue?._id || "",
+                  });
+                }}
                 disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="lastHireDate"
-                label="Last Hire Date"
-                type="date"
-                value={formData.lastHireDate}
-                onChange={handleChange}
-                disabled={loading}
-                InputLabelProps={{
-                  shrink: true,
+                sx={{ width: 220 }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Supervisor"
+                    placeholder="Search supervisor..."
+                  />
+                )}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
+                ListboxProps={{
+                  style: { maxHeight: 200 },
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="state"
-                label="State/Province"
-                value={formData.state}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
+
+            {/* Approver Hierarchy */}
             <Grid item xs={12}>
               <Autocomplete
                 options={approvers}
@@ -480,7 +382,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     ? `${option.firstName} ${option.lastName}`
                     : ""
                 }
-                value={approvers.find(app => app._id === formData.level1Approver) || null}
+                value={
+                  approvers.find(
+                    (app) => app._id === formData.level1Approver,
+                  ) || null
+                }
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -496,9 +402,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     placeholder="Search level 1 approver..."
                   />
                 )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
                 ListboxProps={{
-                  style: { maxHeight: 200 }
+                  style: { maxHeight: 200 },
                 }}
               />
             </Grid>
@@ -510,7 +418,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     ? `${option.firstName} ${option.lastName}`
                     : ""
                 }
-                value={approvers.find(app => app._id === formData.level2Approver) || null}
+                value={
+                  approvers.find(
+                    (app) => app._id === formData.level2Approver,
+                  ) || null
+                }
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -526,9 +438,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     placeholder="Search level 2 approver..."
                   />
                 )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
                 ListboxProps={{
-                  style: { maxHeight: 200 }
+                  style: { maxHeight: 200 },
                 }}
               />
             </Grid>
@@ -540,7 +454,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     ? `${option.firstName} ${option.lastName}`
                     : ""
                 }
-                value={approvers.find(app => app._id === formData.level3Approver) || null}
+                value={
+                  approvers.find(
+                    (app) => app._id === formData.level3Approver,
+                  ) || null
+                }
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -556,9 +474,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     placeholder="Search level 3 approver..."
                   />
                 )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
                 ListboxProps={{
-                  style: { maxHeight: 200 }
+                  style: { maxHeight: 200 },
                 }}
               />
             </Grid>
@@ -570,7 +490,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     ? `${option.firstName} ${option.lastName}`
                     : ""
                 }
-                value={approvers.find(app => app._id === formData.level4Approver) || null}
+                value={
+                  approvers.find(
+                    (app) => app._id === formData.level4Approver,
+                  ) || null
+                }
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -586,9 +510,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     placeholder="Search level 4 approver..."
                   />
                 )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
                 ListboxProps={{
-                  style: { maxHeight: 200 }
+                  style: { maxHeight: 200 },
                 }}
               />
             </Grid>
@@ -600,7 +526,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     ? `${option.firstName} ${option.lastName}`
                     : ""
                 }
-                value={approvers.find(app => app._id === formData.level5Approver) || null}
+                value={
+                  approvers.find(
+                    (app) => app._id === formData.level5Approver,
+                  ) || null
+                }
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -616,9 +546,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                     placeholder="Search level 5 approver..."
                   />
                 )}
-                isOptionEqualToValue={(option, value) => option._id === value._id}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value._id
+                }
                 ListboxProps={{
-                  style: { maxHeight: 200 }
+                  style: { maxHeight: 200 },
                 }}
               />
             </Grid>
@@ -630,11 +562,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
           Cancel
         </Button>
         <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-          {loading ? "Adding..." : "Add Employee"}
+          {loading ? "Updating..." : "Update Employee"}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default AddEmployeeModal;
+export default EditEmployeeModal;

@@ -10,13 +10,16 @@ import {
   MenuItem,
   InputAdornment,
   Grid,
+  IconButton,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SearchIcon from "@mui/icons-material/Search";
+import EditIcon from "@mui/icons-material/Edit";
 import AddEmployeeModal from "../../components/modals/AddEmployeeModal";
 import UploadEmployeesModal from "../../components/modals/UploadEmployeesModal";
+import EditEmployeeModal from "../../components/modals/EditEmployeeModal";
 // import api from '../../utils/api';
 import api from "../../utils/api";
 
@@ -27,6 +30,8 @@ const Employees = () => {
   const [error, setError] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [openUploadModal, setOpenUploadModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -122,11 +127,25 @@ const Employees = () => {
     fetchEmployees(); // Refresh the list
   };
 
+  const handleEditClick = (employee) => {
+    setSelectedEmployee(employee);
+    setOpenEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setOpenEditModal(false);
+    setSelectedEmployee(null);
+  };
+
+  const handleEmployeeUpdated = () => {
+    setOpenEditModal(false);
+    setSelectedEmployee(null);
+    fetchEmployees(); // Refresh the list
+  };
+
   // Extract unique companies from all employees
   const uniqueCompanies = [
-    ...new Set(
-      employees.map((emp) => emp.company).filter((name) => name)
-    ),
+    ...new Set(employees.map((emp) => emp.company).filter((name) => name)),
   ].sort();
 
   const columns = [
@@ -137,7 +156,9 @@ const Employees = () => {
       minWidth: 80,
       flex: 0.4,
       renderCell: (params) => {
-        const index = filteredEmployees.findIndex((emp) => emp._id === params.row._id);
+        const index = filteredEmployees.findIndex(
+          (emp) => emp._id === params.row._id,
+        );
         return index + 1;
       },
     },
@@ -237,6 +258,24 @@ const Employees = () => {
         </Box>
       ),
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 120,
+      minWidth: 100,
+      flex: 0.5,
+      sortable: false,
+      renderCell: (params) => (
+        <Button
+          startIcon={<EditIcon />}
+          color="primary"
+          onClick={() => handleEditClick(params.row)}
+          size="small"
+        >
+          Edit
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -328,13 +367,13 @@ const Employees = () => {
 
             {/* Action Buttons - Push to the right */}
             <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>
-              {/* <Button
+              <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleAddEmployee}
               >
                 Add Employee
-              </Button> */}
+              </Button>
               <Button
                 variant="contained"
                 startIcon={<CloudUploadIcon />}
@@ -367,7 +406,7 @@ const Employees = () => {
                 paginationModel: { pageSize: 10, page: 0 },
               },
             }}
-            pageSizeOptions={[5, 10, 25]}
+            pageSizeOptions={[5, 10, 25, 50, 100, 150, 200]}
             disableRowSelectionOnClick
             sx={{
               border: 0,
@@ -390,6 +429,13 @@ const Employees = () => {
         open={openUploadModal}
         onClose={handleCloseUploadModal}
         onEmployeesUploaded={handleEmployeesUploaded}
+      />
+
+      <EditEmployeeModal
+        open={openEditModal}
+        onClose={handleCloseEditModal}
+        onEmployeeUpdated={handleEmployeeUpdated}
+        employee={selectedEmployee}
       />
     </Box>
   );
