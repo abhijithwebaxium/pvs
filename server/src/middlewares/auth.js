@@ -42,6 +42,11 @@ export const protect = async (req, res, next) => {
 
     next();
   } catch (err) {
+    // Handle JWT specific errors (expired, invalid, malformed)
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      req.user = { isAuthenticated: false };
+      return next();
+    }
     return next(err);
   }
 };

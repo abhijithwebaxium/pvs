@@ -900,7 +900,6 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 1: Employees where this user is Level 1 approver
     const level1Employees = await Employee.find({
       level1Approver: approverId,
-      "approvalStatus.submittedForApproval": true,
       isActive: true,
       _id: { $ne: approverId },
     })
@@ -911,7 +910,6 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 2: Employees where this user is Level 2 approver
     const level2Employees = await Employee.find({
       level2Approver: approverId,
-      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       isActive: true,
       _id: { $ne: approverId },
@@ -923,7 +921,6 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 3: Employees where this user is Level 3 approver
     const level3Employees = await Employee.find({
       level3Approver: approverId,
-      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       isActive: true,
@@ -936,7 +933,6 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 4: Employees where this user is Level 4 approver
     const level4Employees = await Employee.find({
       level4Approver: approverId,
-      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       level3Approver: { $ne: approverId },
@@ -950,7 +946,6 @@ export const getMyApprovals = async (req, res, next) => {
     // Level 5: Employees where this user is Level 5 approver
     const level5Employees = await Employee.find({
       level5Approver: approverId,
-      "approvalStatus.submittedForApproval": true,
       level1Approver: { $ne: approverId },
       level2Approver: { $ne: approverId },
       level3Approver: { $ne: approverId },
@@ -1288,9 +1283,16 @@ export const getMyBonusApprovals = async (req, res, next) => {
       return null; // All levels approved or no more levels
     };
 
+    // Show ALL active employees assigned to this approver, regardless of bonus status
     const allEmployees = await Employee.find({
       isActive: true,
-      "approvalStatus.enteredBy": { $exists: true, $ne: null },
+      $or: [
+        { level1Approver: approverId },
+        { level2Approver: approverId },
+        { level3Approver: approverId },
+        { level4Approver: approverId },
+        { level5Approver: approverId },
+      ],
     })
       .select("-password")
       .populate("supervisor", "firstName lastName employeeId")

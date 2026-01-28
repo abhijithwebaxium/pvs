@@ -1,5 +1,7 @@
 import axios from "axios";
 import API_URL from "../config/api";
+import store from "../store";
+import { logout } from "../store/slices/userSlice";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -28,9 +30,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear local storage if unauthorized
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
+      // Clear Redux state and local storage
+      store.dispatch(logout());
+
+      // Redirect to login page if not already there
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },

@@ -266,7 +266,7 @@ const Approvals = () => {
         if (canPerformAction)
           return action === "approve" ? "Approve" : "Reject";
         if (approvalState.reason === "bonus_missing")
-          return "Bonus must be assigned before approval";
+          return "Bonus not added";
         if (approvalState.reason === "prev_level_pending")
           return `Level ${approvalState.prevLevel} must be approved first`;
         return "Not authorized at this time";
@@ -854,7 +854,7 @@ const Approvals = () => {
           if (canPerformAction)
             return action === "approve" ? "Approve" : "Reject";
           if (approvalState.reason === "bonus_missing")
-            return "Bonus must be assigned before approval";
+            return "Bonus not added";
           if (approvalState.reason === "prev_level_pending")
             return `Level ${approvalState.prevLevel} must be approved first`;
           return "Not authorized at this time";
