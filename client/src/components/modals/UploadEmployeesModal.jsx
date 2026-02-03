@@ -157,6 +157,10 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
       // Transform data to match API format
       const formattedEmployees = employeesData.map((row, index) => {
+        // Try to get full name from various columns
+        let fullName = "";
+
+        // First, try the "Employee Name" column
         const employeeName =
           getColumnValue(
             row,
@@ -165,7 +169,30 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             "employeeName",
             "EmployeeName",
           ) || "";
-        const fullName = parseEmployeeName(employeeName);
+
+        if (employeeName) {
+          fullName = parseEmployeeName(employeeName);
+        } else {
+          // If "Employee Name" doesn't exist, try to combine First Name and Last Name
+          const firstName = getColumnValue(
+            row,
+            "First Name",
+            " First Name ",
+            "firstName",
+            "FirstName",
+          ) || "";
+          const lastName = getColumnValue(
+            row,
+            "Last Name",
+            " Last Name ",
+            "lastName",
+            "LastName",
+          ) || "";
+
+          if (firstName || lastName) {
+            fullName = `${firstName} ${lastName}`.trim();
+          }
+        }
 
         const employeeNumber =
           getColumnValue(
@@ -428,12 +455,8 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           `${data.message}${duplicateInfo}${excelDuplicatesInfo}`,
         );
 
-        // Reset form after a short delay
-        setTimeout(() => {
-          setFile(null);
-          setUploadProgress(0);
-          onEmployeesUploaded();
-        }, 2500);
+        // Don't auto-close for partial success - let user read the message
+        // User will close manually
         return;
       }
 
@@ -451,15 +474,18 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         } employees${reportingInfo}!${excelDuplicatesInfo}`,
       );
 
-      // Reset form after a short delay
+      // Only auto-close on full success (100%)
       setTimeout(() => {
         setFile(null);
         setUploadProgress(0);
+        setSuccessMessage("");
         onEmployeesUploaded();
+        onClose();
       }, 1500);
     } catch (err) {
       setError(err.message || "An error occurred while uploading employees");
       setUploadProgress(0);
+      // Don't auto-clear errors - let user read and manually close
     } finally {
       setLoading(false);
     }
@@ -537,13 +563,26 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       </DialogTitle>
       <DialogContent>
         {error && (
-          <Alert severity="error" sx={{ mb: 2, whiteSpace: "pre-wrap" }}>
+          <Alert
+            severity="error"
+            sx={{ mb: 2, whiteSpace: "pre-wrap" }}
+            onClose={() => setError("")}
+          >
             {error}
           </Alert>
         )}
 
         {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert
+            severity="success"
+            sx={{ mb: 2, whiteSpace: "pre-wrap" }}
+            onClose={() => {
+              setSuccessMessage("");
+              setFile(null);
+              setUploadProgress(0);
+              onEmployeesUploaded();
+            }}
+          >
             {successMessage}
           </Alert>
         )}
@@ -605,7 +644,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               Excel Format Requirements:
             </Typography>
             <Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-              <strong>Required columns:</strong> Employee Number, Employee Name
+              <strong>Required columns:</strong> Employee Number, and either "Employee Name" OR ("First Name" + "Last Name")
             </Typography>
             <Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
               <strong>Optional columns:</strong> SSN, Company, Company Code,
