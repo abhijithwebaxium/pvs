@@ -537,39 +537,29 @@ export const bulkCreateEmployees = async (req, res, next) => {
     // Third pass: Sync approver names to IDs
     const syncResult = await syncApproverIds();
 
-    // Fourth pass: Set role to "approver" for employees who are approvers
+    // Fourth pass: Set role to "approver" for employees who are supervisors
     const allEmployeesAfterSync = await Employee.find({}).select(
       "_id employeeId role",
     );
 
-    // Find all unique approver IDs
-    const approverIds = new Set();
-    const employeesWithApprovers = await Employee.find({
-      $or: [
-        { level1Approver: { $exists: true, $ne: null } },
-        { level2Approver: { $exists: true, $ne: null } },
-        { level3Approver: { $exists: true, $ne: null } },
-        { level4Approver: { $exists: true, $ne: null } },
-        { level5Approver: { $exists: true, $ne: null } },
-      ],
-    }).select(
-      "level1Approver level2Approver level3Approver level4Approver level5Approver",
-    );
+    // Find all employees who have a supervisor assigned
+    const employeesWithSupervisors = await Employee.find({
+      supervisor: { $exists: true, $ne: null },
+    }).select("supervisor");
 
-    // Collect all unique approver IDs
-    for (const emp of employeesWithApprovers) {
-      if (emp.level1Approver) approverIds.add(emp.level1Approver.toString());
-      if (emp.level2Approver) approverIds.add(emp.level2Approver.toString());
-      if (emp.level3Approver) approverIds.add(emp.level3Approver.toString());
-      if (emp.level4Approver) approverIds.add(emp.level4Approver.toString());
-      if (emp.level5Approver) approverIds.add(emp.level5Approver.toString());
+    // Collect all unique supervisor IDs
+    const supervisorIds = new Set();
+    for (const emp of employeesWithSupervisors) {
+      if (emp.supervisor) {
+        supervisorIds.add(emp.supervisor.toString());
+      }
     }
 
-    // Update role to "approver" for all employees who are approvers
+    // Update role to "approver" for all employees who are supervisors
     let approverRoleCount = 0;
-    if (approverIds.size > 0) {
+    if (supervisorIds.size > 0) {
       const updateResult = await Employee.updateMany(
-        { _id: { $in: Array.from(approverIds) } },
+        { _id: { $in: Array.from(supervisorIds) } },
         { $set: { role: "approver", isApprover: true } },
       );
       approverRoleCount = updateResult.modifiedCount;
@@ -579,8 +569,8 @@ export const bulkCreateEmployees = async (req, res, next) => {
     const statusCode = skippedDuplicates.length > 0 ? 207 : 201;
     const message =
       skippedDuplicates.length > 0
-        ? `Partially successful: ${createdEmployees.length} employees created, ${skippedDuplicates.length} skipped (already exist). Synced ${syncResult.updated} approver relationships. Set ${approverRoleCount} employees as approvers.`
-        : `Successfully created ${createdEmployees.length} employees. Synced ${syncResult.updated} approver relationships. Set ${approverRoleCount} employees as approvers.`;
+        ? `Partially successful: ${createdEmployees.length} employees created, ${skippedDuplicates.length} skipped (already exist). Synced ${syncResult.updated} approver relationships. Set ${approverRoleCount} supervisors as approvers.`
+        : `Successfully created ${createdEmployees.length} employees. Synced ${syncResult.updated} approver relationships. Set ${approverRoleCount} supervisors as approvers.`;
 
     res.status(statusCode).json({
       success: true,
@@ -686,39 +676,29 @@ export const resetAndSyncApprovers = async (req, res, next) => {
   }
 };
 
-// @desc    Set approver role for all employees who are approvers
+// @desc    Set approver role for all employees who are supervisors
 // @route   POST /api/employees/set-approver-roles
 // @access  Private (Admin only)
 export const setApproverRoles = async (req, res, next) => {
   try {
-    // Find all employees who are assigned as approvers
-    const employeesWithApprovers = await Employee.find({
-      $or: [
-        { level1Approver: { $exists: true, $ne: null } },
-        { level2Approver: { $exists: true, $ne: null } },
-        { level3Approver: { $exists: true, $ne: null } },
-        { level4Approver: { $exists: true, $ne: null } },
-        { level5Approver: { $exists: true, $ne: null } },
-      ],
-    }).select(
-      "level1Approver level2Approver level3Approver level4Approver level5Approver employeeId",
-    );
+    // Find all employees who have a supervisor assigned
+    const employeesWithSupervisors = await Employee.find({
+      supervisor: { $exists: true, $ne: null },
+    }).select("supervisor employeeId");
 
-    // Collect all unique approver IDs
-    const approverIds = new Set();
-    for (const emp of employeesWithApprovers) {
-      if (emp.level1Approver) approverIds.add(emp.level1Approver.toString());
-      if (emp.level2Approver) approverIds.add(emp.level2Approver.toString());
-      if (emp.level3Approver) approverIds.add(emp.level3Approver.toString());
-      if (emp.level4Approver) approverIds.add(emp.level4Approver.toString());
-      if (emp.level5Approver) approverIds.add(emp.level5Approver.toString());
+    // Collect all unique supervisor IDs
+    const supervisorIds = new Set();
+    for (const emp of employeesWithSupervisors) {
+      if (emp.supervisor) {
+        supervisorIds.add(emp.supervisor.toString());
+      }
     }
 
-    // Update role to "approver" for all employees who are approvers
+    // Update role to "approver" for all employees who are supervisors
     let approverRoleCount = 0;
-    if (approverIds.size > 0) {
+    if (supervisorIds.size > 0) {
       const updateResult = await Employee.updateMany(
-        { _id: { $in: Array.from(approverIds) } },
+        { _id: { $in: Array.from(supervisorIds) } },
         { $set: { role: "approver", isApprover: true } },
       );
       approverRoleCount = updateResult.modifiedCount;
@@ -726,8 +706,8 @@ export const setApproverRoles = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Successfully set approver role for ${approverRoleCount} employees`,
-      totalApprovers: approverIds.size,
+      message: `Successfully set approver role for ${approverRoleCount} supervisors`,
+      totalApprovers: supervisorIds.size,
       updated: approverRoleCount,
     });
   } catch (error) {
