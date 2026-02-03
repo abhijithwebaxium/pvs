@@ -10,12 +10,7 @@ const EmployeeSchema = new Schema(
       unique: true,
       trim: true,
     },
-    firstName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    lastName: {
+    fullName: {
       type: String,
       required: true,
       trim: true,

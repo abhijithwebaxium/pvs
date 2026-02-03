@@ -108,26 +108,8 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
       // Helper function to parse employee name
       const parseEmployeeName = (fullName) => {
-        if (!fullName) return { firstName: "", lastName: "" };
-
-        const trimmedName = fullName.trim();
-
-        // Check if name contains comma (format: "LastName, FirstName MiddleInitial")
-        if (trimmedName.includes(",")) {
-          const parts = trimmedName.split(",").map((s) => s.trim());
-          const lastName = parts[0]; // Everything before comma
-          const firstName = parts.slice(1).join(" "); // Everything after comma
-          return { firstName, lastName };
-        }
-
-        // Otherwise assume format: "FirstName MiddleInitial LastName"
-        const nameParts = trimmedName.split(/\s+/);
-        if (nameParts.length === 1) {
-          return { firstName: nameParts[0], lastName: "" };
-        }
-        const lastName = nameParts[nameParts.length - 1];
-        const firstName = nameParts.slice(0, -1).join(" ");
-        return { firstName, lastName };
+        if (!fullName) return "";
+        return fullName.trim();
       };
 
       // Helper function to parse date (Excel stores dates as serial numbers)
@@ -183,7 +165,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             "employeeName",
             "EmployeeName",
           ) || "";
-        const { firstName, lastName } = parseEmployeeName(employeeName);
+        const fullName = parseEmployeeName(employeeName);
 
         const employeeNumber =
           getColumnValue(
@@ -220,8 +202,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
 
         const employeeData = {
           employeeId: employeeNumber,
-          firstName: firstName,
-          lastName: lastName,
+          fullName: fullName,
           // Password will be set by backend (default: abc123xyz)
           ssn: getColumnValue(row, "SSN", " SSN ", "ssn") || "",
           company: getColumnValue(row, "Company", " Company ", "company") || "",
@@ -392,7 +373,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           skippedDuplicates.push({
             rowNumber: index + 2, // +2 because Excel rows start at 1 and we have header
             employeeId: emp.employeeId,
-            name: `${emp.firstName} ${emp.lastName}`.trim(),
+            name: emp.fullName,
           });
         }
       });

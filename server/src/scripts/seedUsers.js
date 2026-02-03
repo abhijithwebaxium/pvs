@@ -21,8 +21,7 @@ const seedUsers = async () => {
     const users = [
       {
         employeeId: 'EMP001',
-        firstName: 'HR',
-        lastName: 'Manager',
+        fullName: 'HR Manager',
         email: 'hr@company.com',
         password: hashedPassword,
         position: 'HR Manager',
@@ -33,8 +32,7 @@ const seedUsers = async () => {
       },
       {
         employeeId: 'EMP002',
-        firstName: 'John',
-        lastName: 'Supervisor',
+        fullName: 'John Supervisor',
         email: 'supervisor@company.com',
         password: hashedPassword,
         position: 'Department Supervisor',
@@ -46,8 +44,7 @@ const seedUsers = async () => {
       },
       {
         employeeId: 'EMP003',
-        firstName: 'Jane',
-        lastName: 'Smith',
+        fullName: 'Jane Smith',
         email: 'john.smith@company.com',
         password: hashedPassword,
         position: 'Senior Approver',
@@ -59,8 +56,7 @@ const seedUsers = async () => {
       },
       {
         employeeId: 'EMP004',
-        firstName: 'Mike',
-        lastName: 'Employee',
+        fullName: 'Mike Employee',
         email: 'employee@company.com',
         password: hashedPassword,
         position: 'Software Developer',

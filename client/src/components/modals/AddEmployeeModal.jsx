@@ -25,8 +25,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
   const [formData, setFormData] = useState({
     employeeId: "",
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
     password: "",
     role: "employee",
@@ -53,21 +52,21 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [approvers, setApprovers] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
-  // Fetch approvers for dropdowns
+  // Fetch all employees for dropdowns
   useEffect(() => {
-    const fetchApprovers = async () => {
+    const fetchEmployees = async () => {
       try {
-        const response = await api.get("/api/employees?role=approver");
-        setApprovers(response.data.data || []);
+        const response = await api.get("/api/employees");
+        setEmployees(response.data.data || []);
       } catch (err) {
-        console.error("Error fetching approvers:", err);
+        console.error("Error fetching employees:", err);
       }
     };
 
     if (open) {
-      fetchApprovers();
+      fetchEmployees();
     }
   }, [open]);
 
@@ -86,12 +85,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
     // Validation
     if (
       !formData.employeeId ||
-      !formData.firstName ||
-      !formData.lastName ||
+      !formData.fullName ||
       !formData.email ||
       !formData.password
     ) {
-      setError("Employee ID, Name, Email, and Password are required");
+      setError("Employee ID, Full Name, Email, and Password are required");
       return;
     }
 
@@ -105,8 +103,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
     try {
       const payload = {
         employeeId: formData.employeeId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        fullName: formData.fullName,
         email: formData.email,
         password: formData.password,
         role: formData.role,
@@ -142,8 +139,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
       // Reset form
       setFormData({
         employeeId: "",
-        firstName: "",
-        lastName: "",
+        fullName: "",
         email: "",
         password: "",
         role: "employee",
@@ -181,8 +177,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
     if (!loading) {
       setFormData({
         employeeId: "",
-        firstName: "",
-        lastName: "",
+        fullName: "",
         email: "",
         password: "",
         role: "employee",
@@ -244,7 +239,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} width={'250px'}>
               <TextField
                 fullWidth
                 select
@@ -260,24 +255,13 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 <MenuItem value="admin">Admin</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 required
                 fullWidth
-                name="firstName"
-                label="First Name"
-                value={formData.firstName}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                name="lastName"
-                label="Last Name"
-                value={formData.lastName}
+                name="fullName"
+                label="Full Name"
+                value={formData.fullName}
                 onChange={handleChange}
                 disabled={loading}
               />
@@ -349,14 +333,29 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                name="supervisorName"
-                label="Supervisor Name"
-                value={formData.supervisorName}
-                onChange={handleChange}
+            <Grid item xs={12} sm={6} width={'250px'}>
+              <Autocomplete
+                options={employees}
+                getOptionLabel={(option) => option.fullName || ""}
+                value={employees.find(emp => emp._id === formData.supervisorName) || null}
+                onChange={(event, newValue) => {
+                  setFormData({
+                    ...formData,
+                    supervisorName: newValue?._id || "",
+                  });
+                }}
                 disabled={loading}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Supervisor Name"
+                    placeholder="Search supervisor..."
+                  />
+                )}
+                isOptionEqualToValue={(option, value) => option._id === value._id}
+                ListboxProps={{
+                  style: { maxHeight: 200 }
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -389,7 +388,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} width={'250px'}>
               <TextField
                 fullWidth
                 select
@@ -448,7 +447,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} width={'250px'}>
               <TextField
                 fullWidth
                 name="lastHireDate"
@@ -472,15 +471,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 disabled={loading}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6} sx={{width:'250px'}}>
               <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={approvers.find(app => app._id === formData.level1Approver) || null}
+                options={employees}
+                getOptionLabel={(option) => option.fullName || ""}
+                value={employees.find(app => app._id === formData.level1Approver) || null}
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -488,7 +483,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                   });
                 }}
                 disabled={loading}
-                sx={{ width: 220 }}
+                fullWidth
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -502,15 +497,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} width={'250px'}>
               <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={approvers.find(app => app._id === formData.level2Approver) || null}
+                options={employees}
+                getOptionLabel={(option) => option.fullName || ""}
+                value={employees.find(app => app._id === formData.level2Approver) || null}
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -518,7 +509,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                   });
                 }}
                 disabled={loading}
-                sx={{ width: 220 }}
+                fullWidth
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -532,15 +523,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} width={'250px'}>
               <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={approvers.find(app => app._id === formData.level3Approver) || null}
+                options={employees}
+                getOptionLabel={(option) => option.fullName || ""}
+                value={employees.find(app => app._id === formData.level3Approver) || null}
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -548,7 +535,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                   });
                 }}
                 disabled={loading}
-                sx={{ width: 220 }}
+                fullWidth
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -562,15 +549,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} width={'250px'}>
               <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={approvers.find(app => app._id === formData.level4Approver) || null}
+                options={employees}
+                getOptionLabel={(option) => option.fullName || ""}
+                value={employees.find(app => app._id === formData.level4Approver) || null}
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -578,7 +561,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                   });
                 }}
                 disabled={loading}
-                sx={{ width: 220 }}
+                fullWidth
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -592,15 +575,11 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} width={'250px'}>
               <Autocomplete
-                options={approvers}
-                getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
-                }
-                value={approvers.find(app => app._id === formData.level5Approver) || null}
+                options={employees}
+                getOptionLabel={(option) => option.fullName || ""}
+                value={employees.find(app => app._id === formData.level5Approver) || null}
                 onChange={(event, newValue) => {
                   setFormData({
                     ...formData,
@@ -608,7 +587,7 @@ const AddEmployeeModal = ({ open, onClose, onEmployeeAdded }) => {
                   });
                 }}
                 disabled={loading}
-                sx={{ width: 220 }}
+                fullWidth
                 renderInput={(params) => (
                   <TextField
                     {...params}

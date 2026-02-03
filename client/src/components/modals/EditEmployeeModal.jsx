@@ -21,8 +21,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
   const [formData, setFormData] = useState({
     employeeId: "",
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
     role: "employee",
     ssn: "",
@@ -48,8 +47,7 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
     if (employee && open) {
       setFormData({
         employeeId: employee.employeeId || "",
-        firstName: employee.firstName || "",
-        lastName: employee.lastName || "",
+        fullName: employee.fullName || "",
         email: employee.email || "",
         role: employee.role || "employee",
         ssn: employee.ssn || "",
@@ -89,8 +87,7 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
     // Validation
     if (
       !formData.employeeId ||
-      !formData.firstName ||
-      !formData.lastName ||
+      !formData.fullName ||
       !formData.email
     ) {
       setError("Employee ID, Name, and Email are required");
@@ -102,8 +99,7 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
     try {
       const payload = {
         employeeId: formData.employeeId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        fullName: formData.fullName,
         email: formData.email,
         role: formData.role,
         ssn: formData.ssn || undefined,
@@ -129,8 +125,7 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
       // Reset form
       setFormData({
         employeeId: "",
-        firstName: "",
-        lastName: "",
+        fullName: "",
         email: "",
         role: "employee",
         ssn: "",
@@ -165,8 +160,7 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
     if (!loading) {
       setFormData({
         employeeId: "",
-        firstName: "",
-        lastName: "",
+        fullName: "",
         email: "",
         role: "employee",
         ssn: "",
@@ -238,24 +232,13 @@ const EditEmployeeModal = ({ open, onClose, onEmployeeUpdated, employee }) => {
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 required
                 fullWidth
-                name="firstName"
-                label="First Name"
-                value={formData.firstName}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                name="lastName"
-                label="Last Name"
-                value={formData.lastName}
+                name="fullName"
+                label="Full Name"
+                value={formData.fullName}
                 onChange={handleChange}
                 disabled={loading}
               />

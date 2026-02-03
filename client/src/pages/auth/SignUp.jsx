@@ -18,8 +18,7 @@ import api from "../../utils/api";
 const SignUp = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
     employeeId: "",
     password: "",
@@ -44,8 +43,7 @@ const SignUp = () => {
 
     // Validation
     if (
-      !formData.firstName ||
-      !formData.lastName ||
+      !formData.fullName ||
       !formData.email ||
       !formData.employeeId ||
       !formData.password ||
@@ -69,8 +67,7 @@ const SignUp = () => {
 
     try {
       await api.post("/api/auth/signup", {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        fullName: formData.fullName,
         email: formData.email,
         employeeId: formData.employeeId,
         password: formData.password,
@@ -123,24 +120,12 @@ const SignUp = () => {
               margin="normal"
               required
               fullWidth
-              id="firstName"
-              label="First Name"
-              name="firstName"
-              autoComplete="given-name"
+              id="fullName"
+              label="Full Name"
+              name="fullName"
+              autoComplete="name"
               autoFocus
-              value={formData.firstName}
-              onChange={handleChange}
-              disabled={loading}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="lastName"
-              label="Last Name"
-              name="lastName"
-              autoComplete="family-name"
-              value={formData.lastName}
+              value={formData.fullName}
               onChange={handleChange}
               disabled={loading}
             />

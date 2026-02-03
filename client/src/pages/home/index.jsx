@@ -61,7 +61,7 @@ const Home = () => {
   return (
     <Box sx={{ width: "100%" }}>
       <Typography variant="h4" gutterBottom>
-        Welcome, {user?.firstName || "User"}!
+        Welcome, {user?.fullName?.split(" ")[0] || "User"}!
       </Typography>
       <Typography
         variant="body1"

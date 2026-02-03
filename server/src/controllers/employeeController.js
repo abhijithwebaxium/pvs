@@ -41,12 +41,12 @@ export const getEmployee = async (req, res, next) => {
   try {
     const employee = await Employee.findById(req.params.id)
       .select("-password")
-      .populate("supervisor", "firstName lastName employeeId")
-      .populate("level1Approver", "firstName lastName employeeId")
-      .populate("level2Approver", "firstName lastName employeeId")
-      .populate("level3Approver", "firstName lastName employeeId")
-      .populate("level4Approver", "firstName lastName employeeId")
-      .populate("level5Approver", "firstName lastName employeeId");
+      .populate("supervisor", "fullName employeeId")
+      .populate("level1Approver", "fullName employeeId")
+      .populate("level2Approver", "fullName employeeId")
+      .populate("level3Approver", "fullName employeeId")
+      .populate("level4Approver", "fullName employeeId")
+      .populate("level5Approver", "fullName employeeId");
 
     if (!employee) {
       return next(new AppError("Employee not found", 404));
@@ -208,13 +208,9 @@ export const syncApproverIds = async (req, res, next) => {
       // Map by employeeId
       employeeIdMap.set(emp.employeeId, emp);
 
-      // Map by "LastName, FirstName" format
-      const fullName = `${emp.lastName}, ${emp.firstName}`.toLowerCase();
+      // Map by full name (as stored)
+      const fullName = emp.fullName.toLowerCase();
       nameMap.set(fullName, emp);
-
-      // Map by "FirstName LastName" format
-      const reverseName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
-      nameMap.set(reverseName, emp);
 
       // DO NOT map by first name only - this causes false matches!
       // Removed: nameMap.set(emp.firstName.toLowerCase(), emp);
@@ -235,33 +231,10 @@ export const syncApproverIds = async (req, res, next) => {
       approver = nameMap.get(searchKey);
       if (approver) return approver;
 
-      // Try "LastName, FirstName" format
-      const nameParts = nameOrId.split(",").map((s) => s.trim());
-      if (nameParts.length === 2) {
-        const [lastName, firstName] = nameParts;
-        const key = `${lastName}, ${firstName}`.toLowerCase();
-        approver = nameMap.get(key);
-        if (approver) return approver;
-
-        // Try reverse
-        const reverseKey = `${firstName} ${lastName}`.toLowerCase();
-        approver = nameMap.get(reverseKey);
-        if (approver) return approver;
-      }
-
-      // Try "FirstName LastName" format
-      const parts = nameOrId.split(" ").map((s) => s.trim());
-      if (parts.length >= 2) {
-        const firstName = parts[0];
-        const lastName = parts[parts.length - 1];
-        const key = `${firstName} ${lastName}`.toLowerCase();
-        approver = nameMap.get(key);
-        if (approver) return approver;
-
-        const reverseKey = `${lastName}, ${firstName}`.toLowerCase();
-        approver = nameMap.get(reverseKey);
-        if (approver) return approver;
-      }
+      // Try direct name match (case-insensitive)
+      const nameParts = nameOrId.trim();
+      approver = nameMap.get(nameParts);
+      if (approver) return approver;
 
       return null;
     };
@@ -305,7 +278,7 @@ export const syncApproverIds = async (req, res, next) => {
             // Log when person not found
             errors.push({
               employeeId: employee.employeeId,
-              employeeName: `${employee.firstName} ${employee.lastName}`,
+              employeeName: employee.fullName,
               level: level.nameField
                 .replace("ApproverName", "")
                 .replace("Name", ""),
@@ -372,13 +345,12 @@ export const bulkCreateEmployees = async (req, res, next) => {
     const invalidEmployees = [];
     for (let i = 0; i < employees.length; i++) {
       const emp = employees[i];
-      if (!emp.employeeId || !emp.firstName) {
+      if (!emp.employeeId || !emp.fullName) {
         invalidEmployees.push({
           index: i + 1,
           employeeId: emp.employeeId || "N/A",
-          employeeName:
-            `${emp.firstName || ""} ${emp.lastName || ""}`.trim() || "N/A",
-          reason: "Missing required fields (Employee Number, First Name)",
+          employeeName: emp.fullName || "N/A",
+          reason: "Missing required fields (Employee Number, Full Name)",
         });
       }
     }
@@ -449,7 +421,7 @@ export const bulkCreateEmployees = async (req, res, next) => {
 
         skippedDuplicates.push({
           employeeId: empData.employeeId,
-          employeeName: `${empData.firstName} ${empData.lastName}`.trim(),
+          employeeName: empData.fullName,
           email: empData.email || "N/A",
           reason: reason,
         });
@@ -465,30 +437,9 @@ export const bulkCreateEmployees = async (req, res, next) => {
       if (approver) return approver;
 
       // If not found and looks like a name, try matching by full name
-      // Expected format: "LastName, FirstName" or "FirstName LastName"
-      const nameParts = reportingValue.split(",").map((s) => s.trim());
-
-      if (nameParts.length === 2) {
-        // Format: "LastName, FirstName"
-        const [lastName, firstName] = nameParts;
-        approver = await Employee.findOne({
-          firstName: { $regex: new RegExp(`^${firstName}$`, "i") },
-          lastName: { $regex: new RegExp(`^${lastName}`, "i") },
-        });
-      } else {
-        // Format: "FirstName LastName"
-        const parts = reportingValue.split(" ");
-        if (parts.length >= 2) {
-          const firstName = parts[0];
-          const lastName = parts[parts.length - 1];
-          approver = await Employee.findOne({
-            firstName: { $regex: new RegExp(`^${firstName}$`, "i") },
-            lastName: { $regex: new RegExp(`^${lastName}`, "i") },
-          });
-        }
-        // DO NOT match by first name only - this causes false matches!
-        // Removed the first-name-only fallback
-      }
+      approver = await Employee.findOne({
+        fullName: { $regex: new RegExp(`^${reportingValue}$`, "i") },
+      });
 
       return approver;
     };
@@ -599,9 +550,7 @@ export const bulkCreateEmployees = async (req, res, next) => {
           const employeeId =
             err.err?.op?.employeeId || err.op?.employeeId || "Unknown";
           const email = err.err?.op?.email || err.op?.email || "N/A";
-          const firstName = err.err?.op?.firstName || err.op?.firstName || "";
-          const lastName = err.err?.op?.lastName || err.op?.lastName || "";
-          const fullName = `${firstName} ${lastName}`.trim() || "Unknown";
+          const fullName = err.err?.op?.fullName || err.op?.fullName || "Unknown";
 
           return {
             employeeId,
@@ -725,7 +674,7 @@ export const debugApproverAssignments = async (req, res, next) => {
 
     // Find the approver
     const approver = await Employee.findOne({ employeeId }).select(
-      "_id employeeId firstName lastName",
+      "_id employeeId fullName",
     );
 
     if (!approver) {
@@ -785,13 +734,13 @@ export const debugApproverAssignments = async (req, res, next) => {
       _id: { $ne: approverId },
     })
       .select(
-        "employeeId firstName lastName level1ApproverName level2ApproverName level3ApproverName level4ApproverName level5ApproverName level1Approver level2Approver level3Approver level4Approver level5Approver",
+        "employeeId fullName level1ApproverName level2ApproverName level3ApproverName level4ApproverName level5ApproverName level1Approver level2Approver level3Approver level4Approver level5Approver",
       )
-      .populate("level1Approver", "employeeId firstName lastName")
-      .populate("level2Approver", "employeeId firstName lastName")
-      .populate("level3Approver", "employeeId firstName lastName")
-      .populate("level4Approver", "employeeId firstName lastName")
-      .populate("level5Approver", "employeeId firstName lastName")
+      .populate("level1Approver", "employeeId fullName")
+      .populate("level2Approver", "employeeId fullName")
+      .populate("level3Approver", "employeeId fullName")
+      .populate("level4Approver", "employeeId fullName")
+      .populate("level5Approver", "employeeId fullName")
       .limit(10);
 
     // Get sample from Level 2
@@ -802,20 +751,20 @@ export const debugApproverAssignments = async (req, res, next) => {
       _id: { $ne: approverId },
     })
       .select(
-        "employeeId firstName lastName level1ApproverName level2ApproverName level3ApproverName level4ApproverName level5ApproverName level1Approver level2Approver level3Approver level4Approver level5Approver",
+        "employeeId fullName level1ApproverName level2ApproverName level3ApproverName level4ApproverName level5ApproverName level1Approver level2Approver level3Approver level4Approver level5Approver",
       )
-      .populate("level1Approver", "employeeId firstName lastName")
-      .populate("level2Approver", "employeeId firstName lastName")
-      .populate("level3Approver", "employeeId firstName lastName")
-      .populate("level4Approver", "employeeId firstName lastName")
-      .populate("level5Approver", "employeeId firstName lastName")
+      .populate("level1Approver", "employeeId fullName")
+      .populate("level2Approver", "employeeId fullName")
+      .populate("level3Approver", "employeeId fullName")
+      .populate("level4Approver", "employeeId fullName")
+      .populate("level5Approver", "employeeId fullName")
       .limit(10);
 
     res.status(200).json({
       success: true,
       approver: {
         employeeId: approver.employeeId,
-        name: `${approver.firstName} ${approver.lastName}`,
+        name: approver.fullName,
         _id: approver._id,
       },
       counts: {
@@ -848,32 +797,32 @@ export const getMyApprovals = async (req, res, next) => {
     const commonPopulates = [
       {
         path: "approvalStatus.enteredBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
-      { path: "level1Approver", select: "firstName lastName employeeId" },
-      { path: "level2Approver", select: "firstName lastName employeeId" },
-      { path: "level3Approver", select: "firstName lastName employeeId" },
-      { path: "level4Approver", select: "firstName lastName employeeId" },
-      { path: "level5Approver", select: "firstName lastName employeeId" },
+      { path: "level1Approver", select: "fullName employeeId" },
+      { path: "level2Approver", select: "fullName employeeId" },
+      { path: "level3Approver", select: "fullName employeeId" },
+      { path: "level4Approver", select: "fullName employeeId" },
+      { path: "level5Approver", select: "fullName employeeId" },
       {
         path: "approvalStatus.level1.approvedBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
       {
         path: "approvalStatus.level2.approvedBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
       {
         path: "approvalStatus.level3.approvedBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
       {
         path: "approvalStatus.level4.approvedBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
       {
         path: "approvalStatus.level5.approvedBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
     ];
 
@@ -981,31 +930,31 @@ export const getMySupervisedEmployees = async (req, res, next) => {
       _id: { $ne: supervisorId },
     })
       .select("-password")
-      .populate("level1Approver", "firstName lastName employeeId")
-      .populate("level2Approver", "firstName lastName employeeId")
-      .populate("level3Approver", "firstName lastName employeeId")
-      .populate("level4Approver", "firstName lastName employeeId")
-      .populate("level5Approver", "firstName lastName employeeId")
-      .populate("approvalStatus.enteredBy", "firstName lastName employeeId")
+      .populate("level1Approver", "fullName employeeId")
+      .populate("level2Approver", "fullName employeeId")
+      .populate("level3Approver", "fullName employeeId")
+      .populate("level4Approver", "fullName employeeId")
+      .populate("level5Approver", "fullName employeeId")
+      .populate("approvalStatus.enteredBy", "fullName employeeId")
       .populate(
         "approvalStatus.level1.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level2.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level3.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level4.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level5.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .sort({ employeeId: 1 });
 
@@ -1092,31 +1041,31 @@ export const updateEmployeeBonus = async (req, res, next) => {
       runValidators: true,
     })
       .select("-password")
-      .populate("level1Approver", "firstName lastName employeeId")
-      .populate("level2Approver", "firstName lastName employeeId")
-      .populate("level3Approver", "firstName lastName employeeId")
-      .populate("level4Approver", "firstName lastName employeeId")
-      .populate("level5Approver", "firstName lastName employeeId")
-      .populate("approvalStatus.enteredBy", "firstName lastName employeeId")
+      .populate("level1Approver", "fullName employeeId")
+      .populate("level2Approver", "fullName employeeId")
+      .populate("level3Approver", "fullName employeeId")
+      .populate("level4Approver", "fullName employeeId")
+      .populate("level5Approver", "fullName employeeId")
+      .populate("approvalStatus.enteredBy", "fullName employeeId")
       .populate(
         "approvalStatus.level1.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level2.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level3.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level4.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level5.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       );
 
     res.status(200).json({
@@ -1275,32 +1224,32 @@ export const getMyBonusApprovals = async (req, res, next) => {
       ],
     })
       .select("-password")
-      .populate("supervisor", "firstName lastName employeeId")
-      .populate("level1Approver", "firstName lastName employeeId")
-      .populate("level2Approver", "firstName lastName employeeId")
-      .populate("level3Approver", "firstName lastName employeeId")
-      .populate("level4Approver", "firstName lastName employeeId")
-      .populate("level5Approver", "firstName lastName employeeId")
-      .populate("approvalStatus.enteredBy", "firstName lastName employeeId")
+      .populate("supervisor", "fullName employeeId")
+      .populate("level1Approver", "fullName employeeId")
+      .populate("level2Approver", "fullName employeeId")
+      .populate("level3Approver", "fullName employeeId")
+      .populate("level4Approver", "fullName employeeId")
+      .populate("level5Approver", "fullName employeeId")
+      .populate("approvalStatus.enteredBy", "fullName employeeId")
       .populate(
         "approvalStatus.level1.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level2.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level3.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level4.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .populate(
         "approvalStatus.level5.approvedBy",
-        "firstName lastName employeeId",
+        "fullName employeeId",
       )
       .sort({ employeeId: 1 });
 
@@ -1437,16 +1386,16 @@ export const processBonusApproval = async (req, res, next) => {
       { new: true, runValidators: true },
     )
       .select("-password")
-      .populate("supervisor", "firstName lastName employeeId")
-      .populate("level1Approver", "firstName lastName employeeId")
-      .populate("level2Approver", "firstName lastName employeeId")
-      .populate("level3Approver", "firstName lastName employeeId")
-      .populate("level4Approver", "firstName lastName employeeId")
-      .populate("level5Approver", "firstName lastName employeeId")
-      .populate("approvalStatus.enteredBy", "firstName lastName employeeId")
+      .populate("supervisor", "fullName employeeId")
+      .populate("level1Approver", "fullName employeeId")
+      .populate("level2Approver", "fullName employeeId")
+      .populate("level3Approver", "fullName employeeId")
+      .populate("level4Approver", "fullName employeeId")
+      .populate("level5Approver", "fullName employeeId")
+      .populate("approvalStatus.enteredBy", "fullName employeeId")
       .populate(
         `approvalStatus.${levelKey}.approvedBy`,
-        "firstName lastName employeeId",
+        "fullName employeeId",
       );
 
     res.status(200).json({
@@ -1580,7 +1529,7 @@ export const processApproval = async (req, res, next) => {
       { new: true, runValidators: true },
     )
       .select("-password")
-      .populate(`${levelKey}Approver`, "firstName lastName employeeId");
+      .populate(`${levelKey}Approver`, "fullName employeeId");
 
     res.status(200).json({
       success: true,
@@ -1614,13 +1563,13 @@ export const bulkApproveAll = async (req, res, next) => {
     const commonPopulates = [
       {
         path: "approvalStatus.enteredBy",
-        select: "firstName lastName employeeId",
+        select: "fullName employeeId",
       },
-      { path: "level1Approver", select: "firstName lastName employeeId" },
-      { path: "level2Approver", select: "firstName lastName employeeId" },
-      { path: "level3Approver", select: "firstName lastName employeeId" },
-      { path: "level4Approver", select: "firstName lastName employeeId" },
-      { path: "level5Approver", select: "firstName lastName employeeId" },
+      { path: "level1Approver", select: "fullName employeeId" },
+      { path: "level2Approver", select: "fullName employeeId" },
+      { path: "level3Approver", select: "fullName employeeId" },
+      { path: "level4Approver", select: "fullName employeeId" },
+      { path: "level5Approver", select: "fullName employeeId" },
     ];
 
     // Get all employees where the approver has pending approvals
@@ -1658,7 +1607,7 @@ export const bulkApproveAll = async (req, res, next) => {
       if (!isBonusEntered) {
         skippedEmployees.push({
           employeeId: employee.employeeId,
-          name: `${employee.firstName} ${employee.lastName}`,
+          name: employee.fullName,
           reason: "Bonus not entered",
         });
         continue;
@@ -1708,7 +1657,7 @@ export const bulkApproveAll = async (req, res, next) => {
             } else {
               skippedEmployees.push({
                 employeeId: employee.employeeId,
-                name: `${employee.firstName} ${employee.lastName}`,
+                name: employee.fullName,
                 reason: skipReason || "Previous level not approved",
               });
               break;
@@ -1716,7 +1665,7 @@ export const bulkApproveAll = async (req, res, next) => {
           } else if (status === "approved" || status === "rejected") {
             skippedEmployees.push({
               employeeId: employee.employeeId,
-              name: `${employee.firstName} ${employee.lastName}`,
+              name: employee.fullName,
               reason: `Already ${status}`,
             });
             break;

@@ -40,14 +40,14 @@ export default function SideMenu() {
   const currentLogo = resolvedMode === 'dark' ? logo : logoBlack;
 
   // Get user initials for avatar
-  const getInitials = (firstName, lastName) => {
-    if (!firstName && !lastName) return "U";
-    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  const getInitials = (fullName) => {
+    if (!fullName) return "U";
+    const parts = fullName.split(" ");
+    if (parts.length === 1) return parts[0][0]?.toUpperCase() || "U";
+    return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
   };
 
-  const displayName = user
-    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User"
-    : "User";
+  const displayName = user?.fullName || "User";
   const displayEmail = user?.email || "user@email.com";
 
   return (
@@ -107,7 +107,7 @@ export default function SideMenu() {
           alt={displayName}
           sx={{ width: 36, height: 36, bgcolor: "primary.main" }}
         >
-          {getInitials(user?.firstName, user?.lastName)}
+          {getInitials(user?.fullName)}
         </Avatar>
         <Box sx={{ mr: "auto", minWidth: 0 }}>
           <Typography

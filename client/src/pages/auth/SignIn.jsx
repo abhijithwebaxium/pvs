@@ -233,7 +233,7 @@ const SignIn = () => {
             />
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
-              <Typography
+              {/* <Typography
                 variant="body2"
                 sx={{
                   color: "primary.main",
@@ -243,7 +243,7 @@ const SignIn = () => {
                 }}
               >
                 Forgot password?
-              </Typography>
+              </Typography> */}
             </Box>
 
             <Button
@@ -269,13 +269,13 @@ const SignIn = () => {
             </Button>
           </Box>
 
-          <Divider sx={{ my: 4 }}>
+          {/* <Divider sx={{ my: 4 }}>
             <Typography variant="body2" color="text.secondary">
               OR
             </Typography>
-          </Divider>
+          </Divider> */}
 
-          <Box sx={{ textAlign: "center" }}>
+          {/* <Box sx={{ textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{" "}
               <Typography
@@ -292,7 +292,7 @@ const SignIn = () => {
                 Create Account
               </Typography>
             </Typography>
-          </Box>
+          </Box> */}
         </Paper>
 
         <Box sx={{ mt: "auto", pt: 4 }}>

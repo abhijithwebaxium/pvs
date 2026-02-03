@@ -8,10 +8,10 @@ import bcrypt from "bcryptjs";
 // @access  Public
 export const signup = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, employeeId, password } = req.body;
+    const { fullName, email, employeeId, password } = req.body;
 
     // Validation
-    if (!firstName || !lastName || !email || !employeeId || !password) {
+    if (!fullName || !email || !employeeId || !password) {
       return next(new AppError("Please provide all required fields", 400));
     }
 
@@ -35,8 +35,7 @@ export const signup = async (req, res, next) => {
 
     // Create new employee with default values
     const employee = await Employee.create({
-      firstName,
-      lastName,
+      fullName,
       email,
       employeeId,
       password: hashedPassword,
@@ -55,8 +54,7 @@ export const signup = async (req, res, next) => {
           id: employee._id,
           employeeId: employee.employeeId,
           email: employee.email,
-          firstName: employee.firstName,
-          lastName: employee.lastName,
+          fullName: employee.fullName,
         },
       },
     });
@@ -118,8 +116,7 @@ export const login = async (req, res, next) => {
           id: employee._id,
           employeeId: employee.employeeId,
           email: employee.email,
-          firstName: employee.firstName,
-          lastName: employee.lastName,
+          fullName: employee.fullName,
           position: employee.position,
           role: employee.role,
           isApprover: employee.isApprover,

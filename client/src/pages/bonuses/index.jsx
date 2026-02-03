@@ -233,7 +233,7 @@ const Bonuses = () => {
       if (level.approver) {
         // If status is pending at this level, this is the next approver
         if (status === "pending") {
-          return `${level.approver.firstName} ${level.approver.lastName} (${level.approver.employeeId})`;
+          return `${level.approver.fullName} (${level.approver.employeeId})`;
         }
 
         // If rejected, show that
@@ -270,7 +270,7 @@ const Bonuses = () => {
       minWidth: 150,
       flex: 1.2,
       valueGetter: (params, row) =>
-        `${row.firstName || ""} ${row.lastName || ""}`.trim(),
+        row.fullName || "",
     },
     {
       field: "jobTitle",
@@ -581,8 +581,7 @@ const Bonuses = () => {
           {getApprovalStatus(bonusDialog.employee).status !== "not_entered"
             ? "Edit"
             : "Add"}{" "}
-          Bonus for {bonusDialog.employee?.firstName}{" "}
-          {bonusDialog.employee?.lastName}
+          Bonus for {bonusDialog.employee?.fullName}
         </DialogTitle>
         <DialogContent>
           {bonusDialog.employee && (

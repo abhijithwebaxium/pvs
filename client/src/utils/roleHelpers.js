@@ -66,7 +66,7 @@ export const canManageBonuses = (user) => {
 // Get user display name
 export const getUserDisplayName = (user) => {
   if (!user) return "User";
-  return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
+  return user.fullName || "User";
 };
 
 // Get role display name

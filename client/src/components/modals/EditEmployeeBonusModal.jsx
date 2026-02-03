@@ -131,7 +131,7 @@ const EditEmployeeBonusModal = ({ open, onClose, onEmployeeUpdated, employee }) 
         Edit Employee Bonus & Approvers
         {employee && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {employee.firstName} {employee.lastName}
+            {employee.fullName}
           </Typography>
         )}
       </DialogTitle>
@@ -164,9 +164,7 @@ const EditEmployeeBonusModal = ({ open, onClose, onEmployeeUpdated, employee }) 
               <Autocomplete
                 options={employees}
                 getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
+                  option.fullName || ""
                 }
                 value={
                   employees.find((emp) => emp._id === formData.level1Approver) ||
@@ -207,9 +205,7 @@ const EditEmployeeBonusModal = ({ open, onClose, onEmployeeUpdated, employee }) 
               <Autocomplete
                 options={employees}
                 getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
+                  option.fullName || ""
                 }
                 value={
                   employees.find((emp) => emp._id === formData.level2Approver) ||
@@ -250,9 +246,7 @@ const EditEmployeeBonusModal = ({ open, onClose, onEmployeeUpdated, employee }) 
               <Autocomplete
                 options={employees}
                 getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
+                  option.fullName || ""
                 }
                 value={
                   employees.find((emp) => emp._id === formData.level3Approver) ||
@@ -293,9 +287,7 @@ const EditEmployeeBonusModal = ({ open, onClose, onEmployeeUpdated, employee }) 
               <Autocomplete
                 options={employees}
                 getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
+                  option.fullName || ""
                 }
                 value={
                   employees.find((emp) => emp._id === formData.level4Approver) ||
@@ -336,9 +328,7 @@ const EditEmployeeBonusModal = ({ open, onClose, onEmployeeUpdated, employee }) 
               <Autocomplete
                 options={employees}
                 getOptionLabel={(option) =>
-                  option.firstName && option.lastName
-                    ? `${option.firstName} ${option.lastName}`
-                    : ""
+                  option.fullName || ""
                 }
                 value={
                   employees.find((emp) => emp._id === formData.level5Approver) ||

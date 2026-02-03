@@ -18,7 +18,7 @@ export const getBranches = async (req, res, next) => {
     }
 
     const branches = await Branch.find(filter)
-      .populate("manager", "firstName lastName employeeId")
+      .populate("manager", "fullName employeeId")
       .sort({ branchCode: 1 });
 
     // Get employee counts for all branches in one aggregation
@@ -58,7 +58,7 @@ export const getBranch = async (req, res, next) => {
   try {
     const branch = await Branch.findById(req.params.id).populate(
       "manager",
-      "firstName lastName employeeId email phone",
+      "fullName employeeId email phone",
     );
 
     if (!branch) {
@@ -102,7 +102,7 @@ export const updateBranch = async (req, res, next) => {
     const branch = await Branch.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    }).populate("manager", "firstName lastName employeeId");
+    }).populate("manager", "fullName employeeId");
 
     if (!branch) {
       return next(new AppError("Branch not found", 404));
