@@ -78,13 +78,18 @@ export const login = async (req, res, next) => {
     const employee = await Employee.findOne({ email });
 
     if (!employee) {
-      return next(new AppError("Invalid credentials", 401));
+      return next(new AppError("No account found with this email address.", 404));
+    }
+
+    // Check if employee is active
+    if (!employee.isActive) {
+      return next(new AppError("Your account has been deactivated. Please contact HR.", 403));
     }
 
     // Check password
     const isPasswordCorrect = await bcrypt.compare(password, employee.password);
     if (!isPasswordCorrect) {
-      return next(new AppError("Invalid credentials", 401));
+      return next(new AppError("Incorrect password. Please try again.", 401));
     }
 
     // Generate token

@@ -47,7 +47,11 @@ export default function SideMenu() {
     return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
   };
 
-  const displayName = user?.fullName || "User";
+  // Support both new fullName and old firstName/lastName for backward compatibility
+  const displayName = user?.fullName
+    || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : null)
+    || user?.firstName
+    || "User";
   const displayEmail = user?.email || "user@email.com";
 
   return (
@@ -107,7 +111,7 @@ export default function SideMenu() {
           alt={displayName}
           sx={{ width: 36, height: 36, bgcolor: "primary.main" }}
         >
-          {getInitials(user?.fullName)}
+          {getInitials(displayName)}
         </Avatar>
         <Box sx={{ mr: "auto", minWidth: 0 }}>
           <Typography

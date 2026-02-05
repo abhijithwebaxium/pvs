@@ -39,7 +39,11 @@ function SideMenuMobile({ open, toggleDrawer }) {
     return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
   };
 
-  const displayName = user?.fullName || "User";
+  // Support both new fullName and old firstName/lastName for backward compatibility
+  const displayName = user?.fullName
+    || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : null)
+    || user?.firstName
+    || "User";
 
   const handleLogout = async () => {
     try {
@@ -103,7 +107,7 @@ function SideMenuMobile({ open, toggleDrawer }) {
               alt={displayName}
               sx={{ width: 24, height: 24, bgcolor: "primary.main" }}
             >
-              {getInitials(user?.fullName)}
+              {getInitials(displayName)}
             </Avatar>
             <Typography component="p" variant="h6">
               {displayName}

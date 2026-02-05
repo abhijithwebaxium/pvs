@@ -26,13 +26,19 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultType, setResultType] = useState(""); // "error", "warning", "success"
+  const [resultMessage, setResultMessage] = useState("");
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
+    processFile(selectedFile);
+  };
+
+  const processFile = (selectedFile) => {
     setError("");
-    setSuccessMessage("");
 
     if (selectedFile) {
       // Validate file type
@@ -44,6 +50,33 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
       }
 
       setFile(selectedFile);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!loading) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (loading) return;
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      processFile(droppedFile);
     }
   };
 
@@ -85,7 +118,6 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccessMessage("");
 
     // Validation
     if (!file) {
@@ -94,13 +126,25 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
     }
 
     setLoading(true);
-    setUploadProgress(10);
+    setUploadProgress(0);
 
     try {
-      // Parse Excel file
-      const employeesData = await parseExcelFile(file);
+      // Smooth progress from 0 to 20 while starting
+      let currentProgress = 0;
+      const initialInterval = setInterval(() => {
+        currentProgress += Math.random() * 3 + 1;
+        if (currentProgress < 20) {
+          setUploadProgress(Math.floor(currentProgress));
+        }
+      }, 80);
 
-      setUploadProgress(30);
+      // Parse Excel file
+      await new Promise(resolve => setTimeout(resolve, 200)); // Small delay for visual effect
+      clearInterval(initialInterval);
+      setUploadProgress(25);
+
+      const employeesData = await parseExcelFile(file);
+      setUploadProgress(40);
 
       if (!employeesData || employeesData.length === 0) {
         throw new Error("No employee data found in the Excel file");
@@ -405,14 +449,14 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         }
       });
 
-      setUploadProgress(50);
+      setUploadProgress(60);
 
       // Send data to API
       const response = await api.post("/api/employees/bulk", {
         employees: uniqueEmployees,
       });
 
-      setUploadProgress(80);
+      setUploadProgress(95);
 
       const { data } = response;
 
@@ -431,7 +475,7 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         let duplicateInfo = "";
         if (allDuplicates.length > 0) {
           const duplicateDetails = allDuplicates
-            .slice(0, 5)
+            .slice(0, 10)
             .map(
               (dup) =>
                 `  • ${dup.employeeName || "Unknown"} (${dup.employeeId}) - ${
@@ -440,8 +484,8 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             )
             .join("\n");
           const moreMsg =
-            allDuplicates.length > 5
-              ? `\n  ...and ${allDuplicates.length - 5} more`
+            allDuplicates.length > 10
+              ? `\n  ...and ${allDuplicates.length - 10} more`
               : "";
           duplicateInfo = `\n\nSkipped entries:\n${duplicateDetails}${moreMsg}`;
         }
@@ -451,12 +495,15 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
             ? `\n\nNote: Also removed ${skippedDuplicates.length} duplicate entries from Excel file before upload`
             : "";
 
-        setSuccessMessage(
+        // Show result in separate modal
+        setResultType("warning");
+        setResultMessage(
           `${data.message}${duplicateInfo}${excelDuplicatesInfo}`,
         );
-
-        // Don't auto-close for partial success - let user read the message
-        // User will close manually
+        setShowResultModal(true);
+        setLoading(false);
+        setUploadProgress(0);
+        setFile(null);
         return;
       }
 
@@ -468,24 +515,32 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         skippedDuplicates.length > 0
           ? `\n\nNote: Skipped ${skippedDuplicates.length} duplicate entries from Excel file`
           : "";
-      setSuccessMessage(
+
+      // Show success in separate modal
+      setResultType("success");
+      setResultMessage(
         `Successfully uploaded ${
           data.count || uniqueEmployees.length
         } employees${reportingInfo}!${excelDuplicatesInfo}`,
       );
+      setShowResultModal(true);
+      setLoading(false);
+      setUploadProgress(0);
+      setFile(null);
 
-      // Only auto-close on full success (100%)
+      // Auto-close success modal and refresh after delay
       setTimeout(() => {
-        setFile(null);
-        setUploadProgress(0);
-        setSuccessMessage("");
+        setShowResultModal(false);
         onEmployeesUploaded();
         onClose();
-      }, 1500);
+      }, 2000);
     } catch (err) {
-      setError(err.message || "An error occurred while uploading employees");
+      // Show error in separate modal
+      setResultType("error");
+      setResultMessage(err.message || "An error occurred while uploading employees");
+      setShowResultModal(true);
       setUploadProgress(0);
-      // Don't auto-clear errors - let user read and manually close
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -524,13 +579,13 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
     if (!loading) {
       setFile(null);
       setError("");
-      setSuccessMessage("");
       setUploadProgress(0);
       onClose();
     }
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={handleClose}
@@ -572,31 +627,21 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
           </Alert>
         )}
 
-        {successMessage && (
-          <Alert
-            severity="success"
-            sx={{ mb: 2, whiteSpace: "pre-wrap" }}
-            onClose={() => {
-              setSuccessMessage("");
-              setFile(null);
-              setUploadProgress(0);
-              onEmployeesUploaded();
-            }}
-          >
-            {successMessage}
-          </Alert>
-        )}
-
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <Box
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             sx={{
               border: "2px dashed",
-              borderColor: "primary.main",
+              borderColor: isDragging ? "primary.dark" : "primary.main",
               borderRadius: 2,
               p: 3,
               textAlign: "center",
-              backgroundColor: "action.hover",
+              backgroundColor: isDragging ? "action.selected" : "action.hover",
               mb: 2,
+              transition: "all 0.2s ease",
+              cursor: loading ? "not-allowed" : "pointer",
             }}
           >
             <input
@@ -607,6 +652,19 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
               onChange={handleFileChange}
               disabled={loading}
             />
+            <CloudUploadIcon
+              sx={{
+                fontSize: 48,
+                color: isDragging ? "primary.dark" : "primary.main",
+                mb: 1
+              }}
+            />
+            <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+              {isDragging ? "Drop your Excel file here" : "Drag & Drop Excel File"}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+              or
+            </Typography>
             <label htmlFor="excel-file-upload">
               <Button
                 variant="outlined"
@@ -614,15 +672,23 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
                 startIcon={<CloudUploadIcon />}
                 disabled={loading}
               >
-                Choose Excel File
+                Browse Files
               </Button>
             </label>
             {file && (
               <Typography
                 variant="body2"
-                sx={{ mt: 2, color: "text.secondary" }}
+                sx={{
+                  mt: 2,
+                  color: "success.main",
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 1
+                }}
               >
-                Selected: {file.name}
+                ✓ Selected: {file.name}
               </Typography>
             )}
           </Box>
@@ -634,24 +700,38 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
                 variant="caption"
                 sx={{ mt: 1, display: "block", textAlign: "center" }}
               >
-                Uploading... {uploadProgress}%
+                Uploading... {Math.floor(uploadProgress)}%
               </Typography>
             </Box>
           )}
 
           <Alert severity="info" sx={{ mt: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
-              Excel Format Requirements:
+              📋 Excel Format Requirements:
+            </Typography>
+            <Typography variant="caption" component="div" sx={{ mb: 1 }}>
+              <strong>Required Columns:</strong>
+            </Typography>
+            <Typography variant="caption" component="div" sx={{ ml: 2, mb: 1 }}>
+              • Employee Number<br />
+              • Employee Name
             </Typography>
             <Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-              <strong>Required columns:</strong> Employee Number, and either "Employee Name" OR ("First Name" + "Last Name")
+              <strong>Optional Columns:</strong>
             </Typography>
-            <Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-              <strong>Optional columns:</strong> SSN, Company, Company Code,
-              Supervisor Name, Location, 1st Reporting, 2nd Reporting, 3rd
-              Reporting, 4th Reporting, 5th Reporting, State/Province, Work
-              Email, Last Hire Date, Employee Type, Job Title, Salary or Hourly,
-              Annual Salary, Hourly Pay Rate, 2024 Bonus, 2025 Bonus
+            <Typography variant="caption" component="div" sx={{ ml: 2 }}>
+              • Work Email, SSN, Role<br />
+              • Company, Company Code, Location<br />
+              • Supervisor Name<br />
+              • 1st Reporting, 2nd Reporting, 3rd Reporting, 4th Reporting, 5th Reporting<br />
+              • State/Province<br />
+              • Last Hire Date<br />
+              • Employee Type, Job Title<br />
+              • Salary or Hourly, Annual Salary, Hourly Pay Rate<br />
+              • 2024 Bonus, 2025 Bonus
+            </Typography>
+            <Typography variant="caption" component="div" sx={{ mt: 1, fontStyle: "italic", color: "text.secondary" }}>
+              💡 Tip: Download the template above for the correct format
             </Typography>
           </Alert>
         </Box>
@@ -669,6 +749,117 @@ const UploadEmployeesModal = ({ open, onClose, onEmployeesUploaded }) => {
         </Button>
       </DialogActions>
     </Dialog>
+
+    {/* Result Modal */}
+    <Dialog
+      open={showResultModal}
+      onClose={() => {
+        setShowResultModal(false);
+        if (resultType === "warning" || resultType === "error") {
+          onEmployeesUploaded();
+        }
+      }}
+      maxWidth="md"
+      fullWidth
+      slots={{
+        transition: Transition,
+      }}
+    >
+      <DialogTitle>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {resultType === "success" && (
+            <>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  bgcolor: "success.main",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
+                ✓
+              </Box>
+              <Typography variant="h6">Upload Successful</Typography>
+            </>
+          )}
+          {resultType === "warning" && (
+            <>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  bgcolor: "warning.main",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
+                ⚠
+              </Box>
+              <Typography variant="h6">Partial Upload</Typography>
+            </>
+          )}
+          {resultType === "error" && (
+            <>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  bgcolor: "error.main",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
+                ✕
+              </Box>
+              <Typography variant="h6">Upload Failed</Typography>
+            </>
+          )}
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Alert
+          severity={resultType}
+          sx={{ whiteSpace: "pre-wrap", fontSize: "0.9rem" }}
+        >
+          {resultMessage}
+        </Alert>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          onClick={() => {
+            setShowResultModal(false);
+            if (resultType === "warning" || resultType === "error") {
+              onEmployeesUploaded();
+            }
+          }}
+          variant="contained"
+          color={resultType === "success" ? "success" : resultType === "warning" ? "warning" : "error"}
+          sx={{
+            '&:hover': {
+              bgcolor: resultType === "success"
+                ? "success.main"
+                : resultType === "warning"
+                ? "warning.main"
+                : "error.main",
+              opacity: 0.95
+            }
+          }}
+        >
+          {resultType === "success" ? "Great!" : "OK"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  </>
   );
 };
 

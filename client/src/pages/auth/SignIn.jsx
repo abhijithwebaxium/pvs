@@ -8,7 +8,9 @@ import {
   InputAdornment,
   IconButton,
   Paper,
-  Divider,
+  ToggleButton,
+  ToggleButtonGroup,
+  Chip,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +34,7 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authMethod, setAuthMethod] = useState("password"); // 'password' or 'ldap'
 
   const handleChange = (e) => {
     setFormData({
@@ -54,7 +57,12 @@ const SignIn = () => {
     dispatch(loginStart());
 
     try {
-      const response = await api.post("/api/auth/login", {
+      // Determine endpoint based on auth method
+      const endpoint = authMethod === "ldap"
+        ? "/api/auth/ldap/login"
+        : "/api/auth/login";
+
+      const response = await api.post(endpoint, {
         email: formData.email,
         password: formData.password,
       });
@@ -76,13 +84,36 @@ const SignIn = () => {
         navigate("/");
       }
     } catch (err) {
-      const errorMessage = err.message || "An error occurred during login";
+      // Extract meaningful error message
+      let errorMessage = "An error occurred during login";
+
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.status === 401) {
+        errorMessage = authMethod === "ldap"
+          ? "Invalid LDAP credentials. Please check your email and password."
+          : "Invalid email or password.";
+      } else if (err.response?.status === 404) {
+        errorMessage = authMethod === "ldap"
+          ? "User not found in Active Directory or employee record not found in database."
+          : "No account found with this email.";
+      } else if (err.response?.status === 403) {
+        errorMessage = "Your account has been deactivated. Please contact HR.";
+      } else if (err.response?.status === 500) {
+        errorMessage = authMethod === "ldap"
+          ? "LDAP server error. Please try again or contact IT support."
+          : "Server error. Please try again later.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       setError(errorMessage);
       dispatch(loginFailure(errorMessage));
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <Box
@@ -189,6 +220,50 @@ const SignIn = () => {
             </Alert>
           )}
 
+          {/* Authentication Method Selector */}
+          <Box sx={{ mb: 3 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 1.5, fontWeight: 500 }}
+            >
+              Authentication Method
+            </Typography>
+            <ToggleButtonGroup
+              value={authMethod}
+              exclusive
+              onChange={(e, newMethod) => {
+                if (newMethod !== null) {
+                  setAuthMethod(newMethod);
+                  setError("");
+                }
+              }}
+              fullWidth
+              sx={{
+                "& .MuiToggleButton-root": {
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  "&.Mui-selected": {
+                    bgcolor: "primary.main",
+                    color: "white",
+                    "&:hover": {
+                      bgcolor: "primary.dark",
+                    },
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="password">
+                Local Account
+              </ToggleButton>
+              <ToggleButton value="ldap">
+                LDAP
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
               fullWidth
@@ -265,15 +340,24 @@ const SignIn = () => {
                 },
               }}
             >
-              {loading ? "Verifying..." : "Sign In"}
+              {loading
+                ? "Verifying..."
+                : authMethod === "ldap"
+                ? "Sign In with LDAP"
+                : "Sign In"}
             </Button>
-          </Box>
 
-          {/* <Divider sx={{ my: 4 }}>
-            <Typography variant="body2" color="text.secondary">
-              OR
-            </Typography>
-          </Divider> */}
+            {authMethod === "ldap" && (
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Chip
+                  label="Using Active Directory Authentication"
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+              </Box>
+            )}
+          </Box>
 
           {/* <Box sx={{ textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
